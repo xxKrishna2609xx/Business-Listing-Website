@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Search, MapPin, Megaphone, Code2, GraduationCap, Heart,
-  Building2, UtensilsCrossed, Home, Dumbbell, ArrowRight,
-  Star, BadgeCheck, Sparkles, TrendingUp, Shield, Zap,
-  Users, ChevronRight, Quote
+  Search, MapPin, GraduationCap, Heart, Building2, UtensilsCrossed, Home,
+  Dumbbell, ArrowRight, Star, BadgeCheck, Sparkles, TrendingUp, Shield,
+  Zap, Users, ChevronRight, Quote, Hotel, Key, Activity, HardHat, Dog,
+  BedDouble, Smile, Coins, PartyPopper, Car, Truck, Send, Grid
 } from 'lucide-react';
 import BusinessCard from '../../components/business/BusinessCard';
 import { businesses, categories } from '../../data/mockData';
@@ -12,8 +12,9 @@ import { BusinessCardSkeleton } from '../../components/common/Skeletons';
 
 
 const iconMap = {
-  Megaphone, Code2, GraduationCap, Heart, Building2,
-  UtensilsCrossed, Home, Dumbbell,
+  UtensilsCrossed, Hotel, Sparkles, Home, Heart, GraduationCap, Key,
+  Activity, HardHat, Dog, BedDouble, Building2, Smile, Dumbbell, Coins,
+  PartyPopper, Car, Truck, Send, Grid
 };
 
 const StatCard = ({ icon: Icon, value, label, color }) => (
@@ -198,26 +199,42 @@ const HomePage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-x-2 gap-y-6 md:gap-x-4">
             {categories.map((cat, i) => {
               const Icon = iconMap[cat.icon] || Building2;
               return (
                 <Link
                   key={cat.id}
                   to={`/category/${cat.slug}`}
-                  className="group bg-white border border-slate-100 hover:border-blue-200 rounded-2xl p-5 flex flex-col items-center text-center card-hover shadow-sm hover:shadow-blue-100"
+                  className="group flex flex-col items-center w-full animate-fade-in"
                   style={{ animationDelay: `${i * 0.05}s` }}
                 >
-                  <div className={`w-14 h-14 bg-gradient-to-br ${cat.color} rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                    <Icon size={24} className="text-white" />
+                  <div className="w-16 h-16 md:w-20 md:h-20 bg-white border border-slate-150 hover:border-blue-400 rounded-2xl flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-blue-600/5 transition-all duration-200 group-hover:scale-105 cursor-pointer">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center bg-slate-50 border border-slate-50 group-hover:bg-blue-50/50 group-hover:border-blue-100/30 transition-colors">
+                      <Icon size={22} className={`${cat.color.split(' ')[0]} group-hover:scale-110 transition-transform duration-200`} />
+                    </div>
                   </div>
-                  <h3 className="font-bold text-slate-800 text-sm group-hover:text-blue-600 transition-colors leading-tight">
+                  <span className="text-[11px] md:text-xs font-bold text-slate-700 text-center mt-2 leading-tight group-hover:text-blue-600 transition-colors px-1 line-clamp-2">
                     {cat.name}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">{cat.count}+ listings</p>
+                  </span>
                 </Link>
               );
             })}
+
+            {/* Popular Categories (as the 20th category item) */}
+            <Link
+              to="/search"
+              className="group flex flex-col items-center w-full"
+            >
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-white border border-slate-150 hover:border-blue-400 rounded-2xl flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-blue-600/5 transition-all duration-200 group-hover:scale-105 cursor-pointer">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center bg-blue-600/10 border border-blue-100/20 group-hover:bg-blue-600 group-hover:border-blue-600 transition-colors">
+                  <Grid size={22} className="text-blue-600 group-hover:text-white transition-colors" />
+                </div>
+              </div>
+              <span className="text-[11px] md:text-xs font-bold text-slate-700 text-center mt-2 leading-tight group-hover:text-blue-600 transition-colors px-1 line-clamp-2">
+                Popular Categories
+              </span>
+            </Link>
           </div>
         </div>
       </section>
