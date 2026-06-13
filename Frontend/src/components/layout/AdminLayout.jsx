@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Building2, LayoutDashboard, FileText, List, Tag, MessageSquare,
+  LayoutDashboard, FileText, List, Tag, MessageSquare,
   LogOut, Menu, X, ChevronRight, Bell, User, Settings
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -38,9 +38,11 @@ const AdminLayout = ({ children }) => {
         {/* Logo */}
         <div className="p-5 border-b border-slate-800">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-teal-400 rounded-xl flex items-center justify-center">
-              <Building2 size={18} className="text-white" />
-            </div>
+            <img
+              src="/logo-icon-light.png"
+              alt="Right Ads"
+              className="w-9 h-9 object-contain"
+            />
             <div>
               <div className="text-white font-bold text-sm">Right Ads Digital</div>
               <div className="text-blue-400 text-xs">Admin Panel</div>

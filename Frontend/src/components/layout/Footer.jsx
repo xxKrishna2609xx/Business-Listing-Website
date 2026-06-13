@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import {
-  Building2, Mail, Phone, MapPin, ArrowRight, Heart
+  Mail, Phone, MapPin, ArrowRight, Heart
 } from 'lucide-react';
 import { Facebook, Instagram, Linkedin, Twitter } from '../common/SocialIcons';
 
@@ -30,14 +30,12 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-teal-400 rounded-xl flex items-center justify-center">
-                <Building2 size={22} className="text-white" />
-              </div>
-              <div>
-                <div className="text-white font-bold text-base">Right Ads Digital</div>
-                <div className="text-blue-400 text-xs">Business Directory</div>
-              </div>
+            <Link to="/" className="flex items-center mb-4">
+              <img
+                src="/logo-light.png"
+                alt="Right Ads Logo"
+                className="h-10 w-auto"
+              />
             </Link>
             <p className="text-sm text-slate-400 leading-relaxed mb-5">
               India's premier digital business directory connecting customers with verified local businesses across all categories.

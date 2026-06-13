@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
-  Search, MapPin, Menu, X, ChevronDown, Building2,
+  Search, MapPin, Menu, X,
   Phone, LogIn, Bell, Sparkles
 } from 'lucide-react';
-import { categories } from '../../data/mockData';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -12,7 +11,6 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchCity, setSearchCity] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [catDropdown, setCatDropdown] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const searchRef = useRef(null);
@@ -79,22 +77,12 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
-              <Building2 size={20} className="text-white" />
-            </div>
-            <div className="hidden sm:block">
-              <div className={`text-base font-bold leading-tight transition-colors ${
-                isScrolled || !isHome ? 'text-slate-900' : 'text-white'
-              }`}>
-                Right Ads
-              </div>
-              <div className={`text-[10px] font-medium leading-tight transition-colors ${
-                isScrolled || !isHome ? 'text-blue-600' : 'text-blue-200'
-              }`}>
-                DIGITAL DIRECTORY
-              </div>
-            </div>
+          <Link to="/" className="flex items-center flex-shrink-0">
+            <img
+              src={isScrolled || !isHome ? '/logo.png' : '/logo-light.png'}
+              alt="Right Ads Logo"
+              className="h-10 w-auto"
+            />
           </Link>
 
           {/* Desktop Search – hidden on homepage hero (hero has its own) */}
@@ -148,29 +136,7 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Desktop Nav Links */}
           <div className="hidden lg:flex items-center gap-1">
-            <div className="relative" onMouseEnter={() => setCatDropdown(true)} onMouseLeave={() => setCatDropdown(false)}>
-              <button className={`flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                isScrolled || !isHome ? 'text-slate-700 hover:bg-slate-100' : 'text-white hover:bg-white/10'
-              }`}>
-                Categories <ChevronDown size={14} className={`transition-transform ${catDropdown ? 'rotate-180' : ''}`} />
-              </button>
-              {catDropdown && (
-                <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-xl shadow-2xl border border-slate-100 z-50 p-2">
-                  {categories.map(cat => (
-                    <Link
-                      key={cat.id}
-                      to={`/category/${cat.slug}`}
-                      className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors"
-                    >
-                      <span className={`w-2 h-2 rounded-full bg-gradient-to-r ${cat.color}`} />
-                      {cat.name}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
             <Link
               to="/apply"
               className="ml-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30"
@@ -221,19 +187,6 @@ const Navbar = () => {
             </form>
 
             {/* Mobile Links */}
-            <div className="space-y-1 border-t border-slate-100 pt-3">
-              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wide px-2 mb-2">Categories</p>
-              {categories.map(cat => (
-                <Link
-                  key={cat.id}
-                  to={`/category/${cat.slug}`}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg"
-                >
-                  <span className={`w-2 h-2 rounded-full bg-gradient-to-r ${cat.color}`} /> {cat.name}
-                </Link>
-              ))}
-            </div>
             <div className="flex gap-2 pt-2 border-t border-slate-100">
               <Link to="/apply" onClick={() => setMobileOpen(false)} className="flex-1 bg-blue-600 text-white text-center py-2.5 rounded-xl text-sm font-semibold">
                 List Business

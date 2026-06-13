@@ -7,7 +7,7 @@ import {
   Users, ChevronRight, Quote
 } from 'lucide-react';
 import BusinessCard from '../../components/business/BusinessCard';
-import { businesses, categories, testimonials } from '../../data/mockData';
+import { businesses, categories } from '../../data/mockData';
 import { BusinessCardSkeleton } from '../../components/common/Skeletons';
 
 
@@ -92,12 +92,6 @@ const HomePage = () => {
 
         <div className="max-w-7xl mx-auto px-4 relative flex flex-col items-center">
           <div className="flex flex-col items-center text-center max-w-3xl" style={{margin: '0 auto'}}>
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 mb-6">
-              <Sparkles size={13} className="text-yellow-300" />
-              <span className="text-white text-xs font-semibold">India's Fastest Growing Business Directory</span>
-            </div>
-
             <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-5">
               Find The Best{' '}
               <span className="relative">
@@ -389,40 +383,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ───────── TESTIMONIALS ───────── */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col items-center text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-amber-50 text-amber-600 px-3 py-1 rounded-full text-xs font-semibold mb-3">
-              <Star size={12} className="fill-amber-400" /> Testimonials
-            </div>
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900">
-              What Our Clients <span className="gradient-text">Say</span>
-            </h2>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
-              <div key={t.id} className="bg-slate-50 rounded-2xl p-6 border border-slate-100 card-hover">
-                <Quote size={28} className="text-blue-200 mb-3" />
-                <p className="text-slate-600 text-sm leading-relaxed mb-5 italic">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full" />
-                  <div>
-                    <div className="font-bold text-slate-900 text-sm">{t.name}</div>
-                    <div className="text-xs text-slate-500">{t.role}</div>
-                  </div>
-                  <div className="ml-auto flex items-center gap-0.5">
-                    {Array.from({ length: t.rating }).map((_, i) => (
-                      <Star key={i} size={12} className="text-amber-400 fill-amber-400" />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ───────── FINAL CTA ───────── */}
       <section className="py-16 hero-gradient">
