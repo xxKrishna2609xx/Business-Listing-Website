@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 const BusinessCard = ({ business, featured = false }) => {
   const { id, businessName, city, state, categoryName, subcategoryName,
-    logoUrl, description, rating, reviewCount, verified, phone } = business;
+    logoUrl, description, rating, reviewCount, verified, phone, brands } = business;
 
   const { user, isLoggedIn, toggleBookmark } = useAuth();
   const isBookmarked = user?.bookmarks?.includes(id) || false;
@@ -83,6 +83,22 @@ const BusinessCard = ({ business, featured = false }) => {
         <p className="text-xs text-slate-500 line-clamp-2 mb-3 leading-relaxed">
           {description}
         </p>
+
+        {/* Brands Serviced */}
+        {brands && brands.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {brands.slice(0, 3).map((brand, i) => (
+              <span key={i} className="text-[10px] font-bold bg-slate-50 border border-slate-200 text-slate-500 px-1.5 py-0.5 rounded-lg">
+                {brand}
+              </span>
+            ))}
+            {brands.length > 3 && (
+              <span className="text-[10px] font-semibold text-slate-400 self-center ml-1">
+                +{brands.length - 3} more
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Meta */}
         <div className="flex items-center justify-between mb-4">

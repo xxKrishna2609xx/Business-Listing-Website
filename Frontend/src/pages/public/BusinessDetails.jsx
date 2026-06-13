@@ -160,6 +160,22 @@ const BusinessDetails = () => {
               </div>
             )}
 
+            {/* Brands Serviced */}
+            {business.brands?.length > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                <h2 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <Shield size={16} className="text-blue-500" /> Brands Serviced
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {business.brands.map((brand, i) => (
+                    <span key={i} className="bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors cursor-default">
+                      {brand}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Social */}
             {business.socialMediaLinks && Object.keys(business.socialMediaLinks).length > 0 && (
               <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
