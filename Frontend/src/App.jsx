@@ -12,6 +12,9 @@ import SearchResults from './pages/public/SearchResults';
 import CategoryBrowse from './pages/public/CategoryBrowse';
 import BusinessDetails from './pages/public/BusinessDetails';
 import ApplyListing from './pages/public/ApplyListing';
+import Login from './pages/auth/Login';
+import Signup from './pages/auth/Signup';
+import UserDashboard from './pages/user/UserDashboard';
 
 // Admin Pages
 import AdminLogin from './pages/admin/AdminLogin';
@@ -21,7 +24,7 @@ import ManageListings from './pages/admin/ManageListings';
 import ManageCategories from './pages/admin/ManageCategories';
 import ManageLeads from './pages/admin/ManageLeads';
 
-// Protected Route
+// Protected Route for Admin
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return (
@@ -32,6 +35,17 @@ const ProtectedRoute = ({ children }) => {
   return user?.role === 'admin' ? children : <Navigate to="/admin/login" replace />;
 };
 
+// User Protected Route
+const UserProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="w-10 h-10 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
+    </div>
+  );
+  return user ? children : <Navigate to="/login" replace />;
+};
+
 // Public layout wrapper
 const PublicLayout = ({ children }) => {
   const location = useLocation();
@@ -39,10 +53,8 @@ const PublicLayout = ({ children }) => {
   return (
     <>
       <Navbar />
-      {/* On non-home pages, add top padding to clear the fixed navbar:
-          mobile: 64px (nav only)
-          desktop: 64px nav + 28px topbar = 92px → use 96px for breathing room */}
-      <main className={!isHome ? 'pt-16 md:pt-24' : ''}>{children}</main>
+      {/* On non-home pages, add top padding to clear the simplified fixed navbar (64px) */}
+      <main className={!isHome ? 'pt-16' : ''}>{children}</main>
       <Footer />
     </>
   );
@@ -58,6 +70,11 @@ function AppRoutes() {
       <Route path="/category/:categorySlug/:subcategorySlug" element={<PublicLayout><CategoryBrowse /></PublicLayout>} />
       <Route path="/business/:id" element={<PublicLayout><BusinessDetails /></PublicLayout>} />
       <Route path="/apply" element={<PublicLayout><ApplyListing /></PublicLayout>} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+
+      {/* User Dashboard Route */}
+      <Route path="/dashboard" element={<PublicLayout><UserProtectedRoute><UserDashboard /></UserProtectedRoute></PublicLayout>} />
 
       {/* Admin Routes */}
       <Route path="/admin/login" element={<AdminLogin />} />

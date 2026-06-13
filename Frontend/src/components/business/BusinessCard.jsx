@@ -1,14 +1,46 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Star, BadgeCheck, Sparkles, Phone, ExternalLink } from 'lucide-react';
+import { MapPin, Star, BadgeCheck, Sparkles, Phone, ExternalLink, Heart } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const BusinessCard = ({ business, featured = false }) => {
   const { id, businessName, city, state, categoryName, subcategoryName,
     logoUrl, description, rating, reviewCount, verified, phone } = business;
 
+  const { user, isLoggedIn, toggleBookmark } = useAuth();
+  const isBookmarked = user?.bookmarks?.includes(id) || false;
+
+  const handleBookmarkToggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isLoggedIn) {
+      toast.error('Please sign in to save listings.');
+      return;
+    }
+    toggleBookmark(id);
+    toast.success(isBookmarked ? 'Removed from bookmarks' : 'Saved to bookmarks');
+  };
+
   return (
-    <div className={`bg-white rounded-2xl border overflow-hidden card-hover group ${
+    <div className={`bg-white rounded-2xl border overflow-hidden card-hover group relative ${
       featured ? 'border-blue-200 shadow-blue-50 shadow-lg' : 'border-slate-100 shadow-sm'
     }`}>
+      {/* Bookmark Button */}
+      <button
+        onClick={handleBookmarkToggle}
+        className={`absolute right-3 ${featured ? 'top-10' : 'top-3'} z-10 p-2 bg-white/80 hover:bg-white backdrop-blur-sm rounded-xl border border-slate-100/50 shadow-sm transition-all duration-200 hover:scale-105 group/btn cursor-pointer`}
+        title={isBookmarked ? 'Remove from Bookmarks' : 'Save Listing'}
+      >
+        <Heart
+          size={15}
+          className={`transition-all duration-200 ${
+            isBookmarked
+              ? 'fill-red-500 text-red-500 scale-110'
+              : 'text-slate-400 group-hover/btn:text-red-500'
+          }`}
+        />
+      </button>
+
       {/* Featured Badge */}
       {featured && (
         <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-3 py-1.5 flex items-center gap-1.5">

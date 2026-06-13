@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   MapPin, Phone, Mail, Globe, BadgeCheck, Star,
-  MessageCircle, Send, ChevronRight, Building2, Shield, Sparkles, CheckCircle
+  MessageCircle, Send, ChevronRight, Building2, Shield, Sparkles, CheckCircle, Heart
 } from 'lucide-react';
 import { Facebook, Instagram, Linkedin, Twitter } from '../../components/common/SocialIcons';
 
 import LeadFormModal from '../../components/business/LeadFormModal';
 import { businesses } from '../../data/mockData';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const BusinessDetails = () => {
   const { id } = useParams();
@@ -15,6 +17,18 @@ const BusinessDetails = () => {
   const [loading, setLoading] = useState(true);
   const [leadModalOpen, setLeadModalOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+
+  const { user, isLoggedIn, toggleBookmark } = useAuth();
+  const isBookmarked = user?.bookmarks?.includes(id) || false;
+
+  const handleBookmarkToggle = () => {
+    if (!isLoggedIn) {
+      toast.error('Please sign in to save listings.');
+      return;
+    }
+    toggleBookmark(id);
+    toast.success(isBookmarked ? 'Removed from bookmarks' : 'Saved to bookmarks');
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -178,9 +192,20 @@ const BusinessDetails = () => {
             <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
               <button
                 onClick={() => setLeadModalOpen(true)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 cursor-pointer"
               >
                 <Send size={15} /> Request a Quote
+              </button>
+              <button
+                onClick={handleBookmarkToggle}
+                className={`w-full py-3 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border cursor-pointer ${
+                  isBookmarked
+                    ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
+                    : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white hover:bg-slate-50'
+                }`}
+              >
+                <Heart size={15} className={isBookmarked ? 'fill-red-500 text-red-500' : ''} />
+                {isBookmarked ? 'Saved to Bookmarks' : 'Save / Bookmark'}
               </button>
               <a
                 href={whatsappUrl}

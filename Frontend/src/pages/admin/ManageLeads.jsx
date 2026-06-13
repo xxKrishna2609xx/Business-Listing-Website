@@ -5,7 +5,10 @@ import { leads as initialLeads } from '../../data/mockData';
 import toast from 'react-hot-toast';
 
 const ManageLeads = () => {
-  const [leads, setLeads] = useState(initialLeads);
+  const [leads, setLeads] = useState(() => {
+    const localLeads = JSON.parse(localStorage.getItem('user_leads') || '[]');
+    return [...localLeads, ...initialLeads];
+  });
   const [search, setSearch] = useState('');
   const [viewLead, setViewLead] = useState(null);
 
@@ -17,7 +20,14 @@ const ManageLeads = () => {
 
   const deleteLead = (id) => {
     if (window.confirm('Delete this lead?')) {
-      setLeads(prev => prev.filter(l => l.id !== id));
+      const updated = leads.filter(l => l.id !== id);
+      setLeads(updated);
+      
+      // Update local storage
+      const userLeads = JSON.parse(localStorage.getItem('user_leads') || '[]');
+      const filteredUserLeads = userLeads.filter(l => l.id !== id);
+      localStorage.setItem('user_leads', JSON.stringify(filteredUserLeads));
+
       toast.success('Lead deleted');
     }
   };
