@@ -57,7 +57,7 @@ const SearchResults = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-28">
+    <div className="min-h-screen bg-slate-50">
       {/* Search Bar */}
       <div className="bg-white border-b border-slate-100 sticky top-16 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3">

@@ -17,8 +17,8 @@ const iconMap = {
 };
 
 const StatCard = ({ icon: Icon, value, label, color }) => (
-  <div className="text-center">
-    <div className={`w-12 h-12 ${color} rounded-2xl flex items-center justify-center mx-auto mb-3`}>
+  <div className="flex flex-col items-center text-center">
+    <div className={`w-12 h-12 ${color} rounded-2xl flex items-center justify-center mb-3`}>
       <Icon size={22} className="text-white" />
     </div>
     <div className="text-3xl font-black text-white mb-1">{value}</div>
@@ -82,7 +82,7 @@ const HomePage = () => {
   return (
     <div className="min-h-screen">
       {/* ───────── HERO SECTION ───────── */}
-      <section className="hero-gradient relative overflow-hidden pt-24 pb-20 md:pt-32 md:pb-28">
+      <section className="hero-gradient relative overflow-hidden pt-16 pb-20 md:pt-28 md:pb-28">
         {/* Decorative blobs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
@@ -90,8 +90,8 @@ const HomePage = () => {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-700/20 rounded-full blur-3xl" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 relative">
-          <div className="text-center max-w-3xl mx-auto">
+        <div className="max-w-7xl mx-auto px-4 relative flex flex-col items-center">
+          <div className="flex flex-col items-center text-center max-w-3xl" style={{margin: '0 auto'}}>
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 mb-6">
               <Sparkles size={13} className="text-yellow-300" />
@@ -180,7 +180,7 @@ const HomePage = () => {
 
         {/* Stats strip */}
         <div className="max-w-7xl mx-auto px-4 mt-16">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto">
+          <div className="flex flex-wrap justify-center gap-8">
             <StatCard icon={Building2} value="700+" label="Businesses" color="bg-white/20" />
             <StatCard icon={BadgeCheck} value="500+" label="Verified" color="bg-white/20" />
             <StatCard icon={Users} value="10K+" label="Monthly Users" color="bg-white/20" />
@@ -192,7 +192,7 @@ const HomePage = () => {
       {/* ───────── CATEGORIES SECTION ───────── */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-10">
+          <div className="flex flex-col items-center text-center mb-10">
             <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-semibold mb-3">
               <Zap size={12} /> Browse By Category
             </div>
@@ -211,10 +211,10 @@ const HomePage = () => {
                 <Link
                   key={cat.id}
                   to={`/category/${cat.slug}`}
-                  className="group bg-white border border-slate-100 hover:border-blue-200 rounded-2xl p-5 text-center card-hover shadow-sm hover:shadow-blue-100"
+                  className="group bg-white border border-slate-100 hover:border-blue-200 rounded-2xl p-5 flex flex-col items-center text-center card-hover shadow-sm hover:shadow-blue-100"
                   style={{ animationDelay: `${i * 0.05}s` }}
                 >
-                  <div className={`w-14 h-14 bg-gradient-to-br ${cat.color} rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                  <div className={`w-14 h-14 bg-gradient-to-br ${cat.color} rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
                     <Icon size={24} className="text-white" />
                   </div>
                   <h3 className="font-bold text-slate-800 text-sm group-hover:text-blue-600 transition-colors leading-tight">
@@ -378,8 +378,8 @@ const HomePage = () => {
                 { value: '8+', label: 'Categories', icon: Zap, color: 'from-violet-500 to-purple-600' },
                 { value: '4.8★', label: 'Average Rating', icon: Star, color: 'from-amber-500 to-orange-600' },
               ].map(({ value, label, icon: Icon, color }) => (
-                <div key={label} className={`bg-gradient-to-br ${color} p-6 rounded-2xl text-center shadow-lg`}>
-                  <Icon size={28} className="text-white/80 mx-auto mb-2" />
+                <div key={label} className={`bg-gradient-to-br ${color} p-6 rounded-2xl flex flex-col items-center text-center shadow-lg`}>
+                  <Icon size={28} className="text-white/80 mb-2" />
                   <div className="text-3xl font-black text-white">{value}</div>
                   <div className="text-white/80 text-xs mt-1">{label}</div>
                 </div>
@@ -392,7 +392,7 @@ const HomePage = () => {
       {/* ───────── TESTIMONIALS ───────── */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-10">
+          <div className="flex flex-col items-center text-center mb-10">
             <div className="inline-flex items-center gap-2 bg-amber-50 text-amber-600 px-3 py-1 rounded-full text-xs font-semibold mb-3">
               <Star size={12} className="fill-amber-400" /> Testimonials
             </div>
@@ -426,11 +426,11 @@ const HomePage = () => {
 
       {/* ───────── FINAL CTA ───────── */}
       <section className="py-16 hero-gradient">
-        <div className="max-w-7xl mx-auto px-4 text-center">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col items-center text-center">
           <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
             Ready to List Your Business?
           </h2>
-          <p className="text-blue-100 mb-8 max-w-xl mx-auto">
+          <p className="text-blue-100 mb-8 max-w-xl">
             Join 700+ verified businesses on Right Ads Digital and start receiving leads from thousands of potential customers today.
           </p>
           <Link

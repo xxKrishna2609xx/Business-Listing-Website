@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -33,13 +33,20 @@ const ProtectedRoute = ({ children }) => {
 };
 
 // Public layout wrapper
-const PublicLayout = ({ children }) => (
-  <>
-    <Navbar />
-    <main>{children}</main>
-    <Footer />
-  </>
-);
+const PublicLayout = ({ children }) => {
+  const location = useLocation();
+  const isHome = location.pathname === '/';
+  return (
+    <>
+      <Navbar />
+      {/* On non-home pages, add top padding to clear the fixed navbar:
+          mobile: 64px (nav only)
+          desktop: 64px nav + 28px topbar = 92px → use 96px for breathing room */}
+      <main className={!isHome ? 'pt-16 md:pt-24' : ''}>{children}</main>
+      <Footer />
+    </>
+  );
+};
 
 function AppRoutes() {
   return (

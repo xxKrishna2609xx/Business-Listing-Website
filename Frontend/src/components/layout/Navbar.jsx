@@ -97,8 +97,8 @@ const Navbar = () => {
             </div>
           </Link>
 
-          {/* Desktop Search */}
-          <div ref={searchRef} className="hidden lg:flex flex-1 max-w-xl mx-6 relative">
+          {/* Desktop Search – hidden on homepage hero (hero has its own) */}
+          <div ref={searchRef} className={`hidden flex-1 max-w-xl mx-6 relative ${isScrolled || !isHome ? 'lg:flex' : ''}`}>
             <form onSubmit={handleSearch} className="w-full flex">
               <div className="relative flex-1">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />

@@ -56,7 +56,7 @@ const BusinessDetails = () => {
   const whatsappUrl = `https://wa.me/${business.phone.replace(/\D/g, '')}?text=Hi, I found your listing on Right Ads Digital. I'm interested in your services.`;
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-24">
+    <div className="min-h-screen bg-slate-50">
       {/* Breadcrumb */}
       <div className="bg-white border-b border-slate-100">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-2 text-xs text-slate-400">
