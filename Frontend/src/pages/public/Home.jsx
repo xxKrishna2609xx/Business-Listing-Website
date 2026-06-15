@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Search, MapPin, GraduationCap, Heart, Building2, UtensilsCrossed, Home,
-  Dumbbell, ArrowRight, Star, BadgeCheck, Sparkles, TrendingUp, Shield,
-  Zap, Users, ChevronRight, Quote, Hotel, Key, Activity, HardHat, Dog,
+  Search, MapPin, Building2, UtensilsCrossed, Home,
+  Dumbbell, ArrowRight, Star, BadgeCheck, Shield,
+  Zap, Users, ChevronRight, Hotel, Key, Activity, HardHat, Dog,
   BedDouble, Smile, Coins, PartyPopper, Car, Truck, Send, Grid,
-  ShoppingBag, Apple, Milk, Pill, Droplet, WashingMachine, Plane, Train, Bus
+  ShoppingBag, Apple, Milk, Droplet, WashingMachine, Plane, Train, Bus,
+  GraduationCap, Heart, Sparkles, ChevronLeft, Locate
 } from 'lucide-react';
 import BusinessCard from '../../components/business/BusinessCard';
 import { businesses, categories } from '../../data/mockData';
 import { BusinessCardSkeleton } from '../../components/common/Skeletons';
-
 
 const iconMap = {
   UtensilsCrossed, Hotel, Sparkles, Home, Heart, GraduationCap, Key,
@@ -18,57 +18,116 @@ const iconMap = {
   PartyPopper, Car, Truck, Send, Grid
 };
 
-const StatCard = ({ icon: Icon, value, label, color }) => (
-  <div className="flex flex-col items-center text-center">
-    <div className={`w-12 h-12 ${color} rounded-2xl flex items-center justify-center mb-3`}>
-      <Icon size={22} className="text-white" />
-    </div>
-    <div className="text-3xl font-black text-white mb-1">{value}</div>
-    <div className="text-blue-200 text-sm">{label}</div>
-  </div>
+/* ── Banner images (Unsplash CDN, free-to-use) ── */
+const BANNERS = [
+  {
+    url: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1400&q=80',
+    title: 'Find Trusted Businesses Near You',
+    sub: 'Discover 700+ verified local businesses across India',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1400&q=80',
+    title: 'Connect with Local Service Experts',
+    sub: 'From home repairs to healthcare — all in one place',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1400&q=80',
+    title: 'Grow Your Business with Right Ads',
+    sub: 'List your business free and reach thousands of customers',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1400&q=80',
+    title: 'India\'s Premier Business Directory',
+    sub: 'Restaurants, Hotels, Education, Health and more',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1400&q=80',
+    title: 'Real Reviews. Verified Listings.',
+    sub: 'Make informed decisions with genuine customer feedback',
+  },
+];
+
+/* ── Location API via pincode ─────────────────── */
+async function detectLocation() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) { resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude: lat, longitude: lon } = pos.coords;
+          const res  = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
+          );
+          const data = await res.json();
+          const city    = data.address?.city || data.address?.town || data.address?.village || '';
+          const pincode = data.address?.postcode || '';
+          resolve({ city, pincode });
+        } catch { resolve(null); }
+      },
+      () => resolve(null),
+      { timeout: 6000 }
+    );
+  });
+}
+
+/* ── Pill component (reusable) ─────────────── */
+const Pill = ({ label }) => (
+  <span style={{
+    display: 'inline-block',
+    padding: '2px 10px', fontSize: 11, fontWeight: 700,
+    border: '1.5px solid #DDDDDD', borderRadius: 20, color: '#222',
+    background: '#fff',
+  }}>{label}</span>
 );
 
-const HomePage = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchCity, setSearchCity] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('featured');
+export default function HomePage() {
+  const [searchQuery, setSearchQuery]   = useState('');
+  const [searchCity,  setSearchCity]    = useState('');
+  const [pincode,     setPincode]       = useState('');
+  const [locLoading,  setLocLoading]    = useState(false);
+  const [loading,     setLoading]       = useState(true);
+  const [activeTab,   setActiveTab]     = useState('featured');
+  const [bannerIdx,   setBannerIdx]     = useState(0);
+  const [bannerAnim,  setBannerAnim]    = useState('slide-in');
   const navigate = useNavigate();
   const searchRef = useRef(null);
-
-  const allSuggestions = [
-    'SEO Services', 'Web Development', 'Graphic Design', 'Social Media Marketing',
-    'Mobile App Development', 'Branding', 'Cloud Services', 'UI/UX Design',
-    'Content Writing', 'Digital Marketing', 'Logo Design', 'E-commerce',
-  ];
+  const bannerTimer = useRef(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1200);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setLoading(false), 900);
+    return () => clearTimeout(t);
   }, []);
 
+  /* ── Auto-advance banner every 5s ── */
+  const advanceBanner = (dir = 1) => {
+    setBannerAnim('slide-out');
+    setTimeout(() => {
+      setBannerIdx(i => (i + dir + BANNERS.length) % BANNERS.length);
+      setBannerAnim('slide-in');
+    }, 320);
+  };
+
   useEffect(() => {
-    if (searchQuery.length > 0) {
-      setSuggestions(
-        allSuggestions.filter(s => s.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 6)
-      );
-      setShowSuggestions(true);
-    } else {
-      setShowSuggestions(false);
+    bannerTimer.current = setInterval(() => advanceBanner(1), 5000);
+    return () => clearInterval(bannerTimer.current);
+  }, []);
+
+  const goBanner = (dir) => {
+    clearInterval(bannerTimer.current);
+    advanceBanner(dir);
+    bannerTimer.current = setInterval(() => advanceBanner(1), 5000);
+  };
+
+  /* ── Detect location ── */
+  const handleDetectLocation = async () => {
+    setLocLoading(true);
+    const loc = await detectLocation();
+    if (loc) {
+      if (loc.city)    setSearchCity(loc.city);
+      if (loc.pincode) setPincode(loc.pincode);
     }
-  }, [searchQuery]);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    setLocLoading(false);
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -81,158 +140,221 @@ const HomePage = () => {
     ? businesses.filter(b => b.featured)
     : businesses.slice().reverse().slice(0, 4);
 
+  const banner = BANNERS[bannerIdx];
+
   return (
-    <div className="min-h-screen">
-      {/* ───────── HERO SECTION ───────── */}
-      <section className="hero-gradient relative overflow-hidden pt-16 pb-20 md:pt-28 md:pb-28">
-        {/* Decorative blobs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-teal-400/10 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-700/20 rounded-full blur-3xl" />
+    <div className="min-h-screen" style={{ background: '#fff' }}>
+
+      {/* ══════════ HERO WITH AUTO-SLIDER ══════════ */}
+      <section style={{ position: 'relative', overflow: 'hidden', minHeight: 520 }}>
+
+        {/* Background image */}
+        <div key={bannerIdx} style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `url(${banner.url})`,
+          backgroundSize: 'cover', backgroundPosition: 'center',
+          animation: `${bannerAnim} 0.38s ease`,
+        }} />
+        {/* Dark overlay */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(10,20,60,0.72) 0%, rgba(10,20,60,0.55) 100%)' }} />
+
+        {/* Arrow controls */}
+        {[{ dir: -1, side: 'left', Icon: ChevronLeft }, { dir: 1, side: 'right', Icon: ChevronRight }].map(({ dir, side, Icon }) => (
+          <button key={side} onClick={() => goBanner(dir)} style={{
+            position: 'absolute', top: '50%', [side]: 20,
+            transform: 'translateY(-50%)',
+            width: 40, height: 40, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.3)',
+            color: '#fff', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backdropFilter: 'blur(4px)', zIndex: 10, transition: 'background 0.2s',
+          }}>
+            <Icon size={20} />
+          </button>
+        ))}
+
+        {/* Dots */}
+        <div style={{ position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 7, zIndex: 10 }}>
+          {BANNERS.map((_, i) => (
+            <button key={i} onClick={() => { clearInterval(bannerTimer.current); setBannerIdx(i); bannerTimer.current = setInterval(() => advanceBanner(1), 5000); }} style={{
+              width: i === bannerIdx ? 22 : 8, height: 8, borderRadius: 4,
+              background: i === bannerIdx ? '#fff' : 'rgba(255,255,255,0.45)',
+              border: 'none', cursor: 'pointer', transition: 'all 0.3s',
+            }} />
+          ))}
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 relative flex flex-col items-center">
-          <div className="flex flex-col items-center text-center max-w-3xl" style={{margin: '0 auto'}}>
-            <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-5">
-              Find The Best{' '}
-              <span className="relative">
-                <span className="text-yellow-300">Local Businesses</span>
-                <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none">
-                  <path d="M1 8C50 3 100 3 150 6C200 9 250 9 299 6" stroke="#FCD34D" strokeWidth="3" strokeLinecap="round"/>
-                </svg>
-              </span>
-              {' '}Near You
-            </h1>
-            <p className="text-blue-100 text-lg md:text-xl mb-10 leading-relaxed">
-              Discover 700+ verified businesses across 8+ categories.
-              From marketing agencies to IT solutions — all in one place.
-            </p>
+        {/* Hero content */}
+        <div style={{ position: 'relative', zIndex: 5, maxWidth: 1280, margin: '0 auto', padding: '80px 24px 100px', textAlign: 'center' }}>
+          <h1 style={{
+            fontSize: 'clamp(28px,5vw,56px)', fontWeight: 900, color: '#fff',
+            lineHeight: 1.15, marginBottom: 16,
+            animation: 'fadeUp 0.5s ease both',
+          }}>
+            {banner.title}
+          </h1>
+          <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.82)', marginBottom: 40, animation: 'fadeUp 0.6s ease both' }}>
+            {banner.sub}
+          </p>
 
-            {/* Hero Search */}
-            <div ref={searchRef} className="relative">
-              <form onSubmit={handleSearch}>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-2 flex flex-col sm:flex-row gap-2 shadow-2xl">
-                  <div className="flex-1 relative">
-                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Search businesses, services, categories..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-white text-slate-900 pl-11 pr-4 py-3.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    />
-                  </div>
-                  <div className="relative sm:w-44">
-                    <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="City / Location"
-                      value={searchCity}
-                      onChange={(e) => setSearchCity(e.target.value)}
-                      className="w-full bg-white text-slate-900 pl-10 pr-4 py-3.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="bg-yellow-400 hover:bg-yellow-300 text-slate-900 px-8 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 justify-center shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/40 hover:scale-105"
-                  >
-                    <Search size={16} /> Search
-                  </button>
-                </div>
-              </form>
-
-              {/* Suggestions Dropdown */}
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-slate-100 z-20 overflow-hidden">
-                  {suggestions.map((s, i) => (
-                    <button
-                      key={i}
-                      onClick={() => { setSearchQuery(s); setShowSuggestions(false); }}
-                      className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2 transition-colors border-b border-slate-50 last:border-0"
-                    >
-                      <Search size={13} className="text-slate-400" /> {s}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Popular tags */}
-            <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
-              <span className="text-blue-200 text-xs">Trending:</span>
-              {['SEO Services', 'Web Development', 'Branding', 'Social Media'].map(tag => (
+          {/* Search form */}
+          <form onSubmit={handleSearch} ref={searchRef} style={{ animation: 'fadeUp 0.7s ease both' }}>
+            <div style={{
+              display: 'flex', flexWrap: 'wrap', gap: 8,
+              background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)',
+              border: '1.5px solid rgba(255,255,255,0.25)',
+              borderRadius: 18, padding: 8, maxWidth: 780, margin: '0 auto',
+            }}>
+              {/* Query */}
+              <div style={{ flex: '1 1 200px', position: 'relative', minWidth: 0 }}>
+                <Search size={16} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: '#888' }} />
+                <input
+                  type="text"
+                  placeholder="Search businesses, services..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%', paddingLeft: 38, paddingRight: 12, paddingTop: 12, paddingBottom: 12,
+                    fontSize: 14, border: 'none', borderRadius: 12, outline: 'none',
+                    background: '#fff', color: '#111', fontFamily: 'inherit',
+                  }}
+                />
+              </div>
+              {/* City + pincode */}
+              <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 12, padding: '0 12px' }}>
+                <MapPin size={14} style={{ color: '#888', flexShrink: 0 }} />
+                <input
+                  type="text"
+                  placeholder="City"
+                  value={searchCity}
+                  onChange={e => setSearchCity(e.target.value)}
+                  style={{ width: 90, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', color: '#111', fontFamily: 'inherit' }}
+                />
+                <div style={{ width: 1, height: 16, background: '#ddd' }} />
+                <input
+                  type="text"
+                  placeholder="Pincode"
+                  value={pincode}
+                  onChange={e => setPincode(e.target.value)}
+                  style={{ width: 72, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', color: '#111', fontFamily: 'inherit' }}
+                />
                 <button
-                  key={tag}
-                  onClick={() => navigate(`/search?query=${encodeURIComponent(tag)}`)}
-                  className="text-xs bg-white/10 hover:bg-white/20 text-white border border-white/20 px-3 py-1.5 rounded-full transition-colors"
+                  type="button"
+                  onClick={handleDetectLocation}
+                  title="Detect my location"
+                  style={{
+                    width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #DDDDDD',
+                    background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: locLoading ? '#1a56db' : '#555', flexShrink: 0, transition: 'color 0.2s',
+                  }}
                 >
-                  {tag}
+                  <Locate size={13} style={{ animation: locLoading ? 'spin 1s linear infinite' : 'none' }} />
                 </button>
-              ))}
+              </div>
+              <button
+                type="submit"
+                style={{
+                  padding: '12px 28px', background: '#1a56db', color: '#fff',
+                  border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 15,
+                  cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+                  transition: 'background 0.2s, transform 0.15s',
+                  display: 'flex', alignItems: 'center', gap: 7,
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = '#1648c0'}
+                onMouseLeave={e => e.currentTarget.style.background = '#1a56db'}
+              >
+                <Search size={16} /> Search
+              </button>
             </div>
-          </div>
-        </div>
+          </form>
 
-        {/* Stats strip */}
-        <div className="max-w-7xl mx-auto px-4 mt-16">
-          <div className="flex flex-wrap justify-center gap-8">
-            <StatCard icon={Building2} value="700+" label="Businesses" color="bg-white/20" />
-            <StatCard icon={BadgeCheck} value="500+" label="Verified" color="bg-white/20" />
-            <StatCard icon={Users} value="10K+" label="Monthly Users" color="bg-white/20" />
-            <StatCard icon={Star} value="4.8★" label="Avg Rating" color="bg-white/20" />
+          {/* Trending tags */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20 }}>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>Trending:</span>
+            {['Restaurants', 'Gyms', 'Hospitals', 'Beauty Spa', 'Education'].map(tag => (
+              <button key={tag} onClick={() => navigate(`/search?query=${encodeURIComponent(tag)}`)}
+                style={{
+                  fontSize: 12, background: 'rgba(255,255,255,0.15)', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.3)', padding: '5px 14px',
+                  borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.2s',
+                }}>
+                {tag}
+              </button>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ───────── CATEGORIES SECTION ───────── */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col items-center text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-semibold mb-3">
+      {/* ══════════ STATS STRIP ══════════ */}
+      <section style={{ background: '#1a56db', padding: '20px 24px' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px 60px' }}>
+          {[
+            { icon: Building2, value: '700+',  label: 'Businesses'   },
+            { icon: BadgeCheck,value: '500+',  label: 'Verified'     },
+            { icon: Users,     value: '10K+',  label: 'Monthly Users'},
+            { icon: Star,      value: '4.8★',  label: 'Avg Rating'   },
+          ].map(({ icon: Icon, value, label }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Icon size={22} color="rgba(255,255,255,0.7)" />
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>{value}</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>{label}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ══════════ CATEGORIES GRID ══════════ */}
+      <section style={{ padding: '60px 24px', background: '#fff' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eff6ff', color: '#1a56db', padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, marginBottom: 12 }}>
               <Zap size={12} /> Browse By Category
             </div>
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">
-              Explore Popular <span className="gradient-text">Categories</span>
+            <h2 style={{ fontSize: 'clamp(24px,4vw,38px)', fontWeight: 900, color: '#111', margin: 0 }}>
+              Explore Popular Categories
             </h2>
-            <p className="text-slate-500 max-w-xl mx-auto text-sm">
-              Browse through our curated business categories to find the services you need.
-            </p>
           </div>
 
-          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-x-2 gap-y-6 md:gap-x-4">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))', gap: '24px 16px' }}>
             {categories.map((cat, i) => {
               const Icon = iconMap[cat.icon] || Building2;
               return (
-                <Link
-                  key={cat.id}
-                  to={`/category/${cat.slug}`}
-                  className="group flex flex-col items-center w-full animate-fade-in"
-                  style={{ animationDelay: `${i * 0.05}s` }}
-                >
-                  <div className="w-16 h-16 md:w-20 md:h-20 bg-white border border-slate-150 hover:border-blue-400 rounded-2xl flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-blue-600/5 transition-all duration-200 group-hover:scale-105 cursor-pointer">
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center bg-slate-50 border border-slate-50 group-hover:bg-blue-50/50 group-hover:border-blue-100/30 transition-colors">
-                      <Icon size={22} className={`${cat.color.split(' ')[0]} group-hover:scale-110 transition-transform duration-200`} />
-                    </div>
+                <Link key={cat.id} to={`/category/${cat.slug}`}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textDecoration: 'none', animation: `fadeUp 0.4s ease ${i * 0.04}s both` }}>
+                  <div style={{
+                    width: 72, height: 72,
+                    border: '1.5px solid #EBEBEB', borderRadius: 18,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: '#fff', cursor: 'pointer', transition: 'all 0.2s',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(26,86,219,0.12)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#EBEBEB'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'; }}
+                  >
+                    <Icon size={28} style={{ color: '#1a56db' }} />
                   </div>
-                  <span className="text-[11px] md:text-xs font-bold text-slate-700 text-center mt-2 leading-tight group-hover:text-blue-600 transition-colors px-1 line-clamp-2">
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#333', textAlign: 'center', marginTop: 8, lineHeight: 1.3 }}>
                     {cat.name}
                   </span>
                 </Link>
               );
             })}
 
-            {/* Popular Categories (as the 20th category item) */}
-            <Link
-              to="/search"
-              className="group flex flex-col items-center w-full"
-            >
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-white border border-slate-150 hover:border-blue-400 rounded-2xl flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-blue-600/5 transition-all duration-200 group-hover:scale-105 cursor-pointer">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center bg-blue-600/10 border border-blue-100/20 group-hover:bg-blue-600 group-hover:border-blue-600 transition-colors">
-                  <Grid size={22} className="text-blue-600 group-hover:text-white transition-colors" />
-                </div>
+            {/* All categories tile */}
+            <Link to="/search" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textDecoration: 'none' }}>
+              <div style={{
+                width: 72, height: 72, border: '1.5px solid #1a56db', borderRadius: 18,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: '#eff6ff', cursor: 'pointer', transition: 'all 0.2s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#1a56db'; e.currentTarget.querySelector('svg').style.color = '#fff'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.querySelector('svg').style.color = '#1a56db'; }}
+              >
+                <Grid size={28} style={{ color: '#1a56db', transition: 'color 0.2s' }} />
               </div>
-              <span className="text-[11px] md:text-xs font-bold text-slate-700 text-center mt-2 leading-tight group-hover:text-blue-600 transition-colors px-1 line-clamp-2">
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#333', textAlign: 'center', marginTop: 8, lineHeight: 1.3 }}>
                 Popular Categories
               </span>
             </Link>
@@ -240,163 +362,45 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ───────── QUICK SERVICES & BOOKINGS SECTION ───────── */}
-      <section className="py-12 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-sm space-y-8">
-            
-            {/* Row 1: Daily Needs */}
-            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start lg:items-center">
-              {/* Left Column */}
-              <div className="w-full lg:w-1/4 pr-4">
-                <h3 className="text-2xl font-bold text-slate-900 mb-2 font-sans tracking-tight">
-                  Daily Needs
-                </h3>
-                <p className="text-sm text-slate-500 leading-relaxed mb-3">
-                  Find essential daily services and local supplies instantly near you
-                </p>
-                <Link
-                  to="/search?query=Daily+Needs"
-                  className="inline-flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors"
-                >
-                  Explore More <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </div>
-
-              {/* Right Column */}
-              <div className="w-full lg:w-3/4 grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-6 md:gap-x-4">
-                {[
-                  { name: 'Groceries', icon: ShoppingBag, iconColor: 'text-indigo-500 fill-indigo-50', query: 'Groceries' },
-                  { name: 'Fruits & Veg', icon: Apple, iconColor: 'text-emerald-500 fill-emerald-50', query: 'Vegetables' },
-                  { name: 'Milk & Dairy', icon: Milk, iconColor: 'text-blue-500 fill-blue-50', query: 'Dairy' },
-                  { name: 'Medicines', icon: Pill, iconColor: 'text-rose-500 fill-rose-50', query: 'Pharmacy' },
-                  { name: 'Water Supplier', icon: Droplet, iconColor: 'text-cyan-500 fill-cyan-50', query: 'Water' },
-                  { name: 'Laundry/Dry', icon: WashingMachine, iconColor: 'text-amber-500 fill-amber-50', query: 'Laundry' },
-                ].map((item, idx) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={idx}
-                      to={`/search?query=${encodeURIComponent(item.query)}`}
-                      className="group flex flex-col items-center w-full text-center"
-                    >
-                      <div className="w-20 h-20 bg-white border border-slate-200 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:border-blue-500 group-hover:shadow-md group-hover:-translate-y-1 cursor-pointer">
-                        <Icon size={32} strokeWidth={1.5} className={`${item.iconColor} transition-transform duration-300 group-hover:scale-110`} />
-                      </div>
-                      <span className="text-xs sm:text-[13px] font-bold text-slate-700 mt-2 text-center group-hover:text-blue-600 transition-colors leading-tight">
-                        {item.name}
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Separator */}
-            <div className="border-t border-slate-200 -mx-6 md:-mx-8" />
-
-            {/* Row 2: Travel Bookings */}
-            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start lg:items-center">
-              {/* Left Column */}
-              <div className="w-full lg:w-1/4 pr-4">
-                <h3 className="text-2xl font-bold text-slate-900 mb-2 font-sans tracking-tight">
-                  Travel Bookings
-                </h3>
-                <p className="text-sm text-slate-500 leading-relaxed mb-3">
-                  Instant ticket bookings for your best travel and commute experiences
-                </p>
-                <Link
-                  to="/search?query=Travel"
-                  className="inline-flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors"
-                >
-                  Explore More <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </div>
-
-              {/* Right Column */}
-              <div className="w-full lg:w-3/4 grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-6 md:gap-x-4">
-                {[
-                  { name: 'Flight', icon: Plane, iconColor: 'text-sky-500 fill-sky-50', subtext: 'Powered By\nEasemytrip.com', query: 'Flights' },
-                  { name: 'Bus', icon: Bus, iconColor: 'text-red-500 fill-red-50', subtext: 'Affordable Rides', query: 'Bus' },
-                  { name: 'Train', icon: Train, iconColor: 'text-indigo-600 fill-indigo-50', subtext: '', query: 'Train' },
-                  { name: 'Hotel', icon: Hotel, iconColor: 'text-emerald-500 fill-emerald-50', subtext: 'Budget-friendly\nStay', query: 'Hotels' },
-                  { name: 'Car Rentals', icon: Car, iconColor: 'text-blue-500 fill-blue-50', subtext: 'Drive Easy\nAnywhere', query: 'Car Rentals' },
-                ].map((item, idx) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={idx}
-                      to={`/search?query=${encodeURIComponent(item.query)}`}
-                      className="group flex flex-col items-center w-full text-center"
-                    >
-                      <div className="w-20 h-20 bg-white border border-slate-200 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:border-blue-500 group-hover:shadow-md group-hover:-translate-y-1 cursor-pointer">
-                        <Icon size={32} strokeWidth={1.5} className={`${item.iconColor} transition-transform duration-300 group-hover:scale-110`} />
-                      </div>
-                      <span className="text-xs sm:text-[13px] font-bold text-slate-700 mt-2 text-center group-hover:text-blue-600 transition-colors leading-tight">
-                        {item.name}
-                      </span>
-                      {item.subtext && (
-                        <span className="text-[10px] text-emerald-600 font-semibold mt-1 leading-tight whitespace-pre-line text-center max-w-[96px]">
-                          {item.subtext}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ───────── FEATURED / LATEST BUSINESSES ───────── */}
-      <section className="py-16 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      {/* ══════════ FEATURED BUSINESSES ══════════ */}
+      <section style={{ padding: '60px 24px', background: '#f8faff' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 32 }}>
             <div>
-              <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-semibold mb-2">
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eff6ff', color: '#1a56db', padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, marginBottom: 10 }}>
                 <Sparkles size={12} /> Top Picks
               </div>
-              <h2 className="text-3xl font-black text-slate-900">
-                Discover <span className="gradient-text">Businesses</span>
-              </h2>
+              <h2 style={{ fontSize: 32, fontWeight: 900, color: '#111', margin: 0 }}>Discover Businesses</h2>
             </div>
-
-            {/* Tabs */}
-            <div className="flex bg-white border border-slate-200 rounded-xl p-1 gap-1">
-              {[
-                { key: 'featured', label: '⭐ Featured' },
-                { key: 'latest', label: '🕐 Latest' },
-              ].map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                    activeTab === tab.key
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  {tab.label}
-                </button>
+            <div style={{ display: 'flex', background: '#fff', border: '1.5px solid #EBEBEB', borderRadius: 14, padding: 4, gap: 4 }}>
+              {[{ key: 'featured', label: 'Featured' }, { key: 'latest', label: 'Latest' }].map(tab => (
+                <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+                  padding: '7px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  background: activeTab === tab.key ? '#1a56db' : 'transparent',
+                  color: activeTab === tab.key ? '#fff' : '#717171',
+                  transition: 'all 0.2s',
+                }}>{tab.label}</button>
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
             {loading
               ? Array.from({ length: 6 }).map((_, i) => <BusinessCardSkeleton key={i} />)
-              : displayedBusinesses.map(biz => (
-                  <BusinessCard key={biz.id} business={biz} featured={biz.featured} />
-                ))
+              : displayedBusinesses.map(biz => <BusinessCard key={biz.id} business={biz} featured={biz.featured} />)
             }
           </div>
 
-          <div className="text-center mt-8">
-            <Link
-              to="/search"
-              className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:border-blue-400 text-slate-700 hover:text-blue-600 px-8 py-3 rounded-xl font-semibold text-sm transition-all duration-200 hover:shadow-lg"
+          <div style={{ textAlign: 'center', marginTop: 36 }}>
+            <Link to="/search" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '12px 28px', border: '1.5px solid #DDDDDD', borderRadius: 14,
+              color: '#333', fontWeight: 600, fontSize: 14, textDecoration: 'none',
+              background: '#fff', transition: 'border-color 0.2s, color 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.color = '#1a56db'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#DDDDDD'; e.currentTarget.style.color = '#333'; }}
             >
               View All Businesses <ArrowRight size={16} />
             </Link>
@@ -404,134 +408,119 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ───────── HOW IT WORKS ───────── */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-teal-50 text-teal-600 px-3 py-1 rounded-full text-xs font-semibold mb-3">
-              <TrendingUp size={12} /> Simple Process
-            </div>
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">
-              How It <span className="gradient-text">Works</span>
-            </h2>
+      {/* ══════════ HOW IT WORKS ══════════ */}
+      <section style={{ padding: '60px 24px', background: '#fff' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <h2 style={{ fontSize: 34, fontWeight: 900, color: '#111' }}>How It Works</h2>
+            <p style={{ color: '#717171', marginTop: 8 }}>Get started in three simple steps</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {/* Connection line */}
-            <div className="hidden md:block absolute top-16 left-1/3 right-1/3 h-0.5 bg-gradient-to-r from-blue-200 via-teal-200 to-blue-200" />
-
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 32 }}>
             {[
-              {
-                step: '01', icon: Search, title: 'Search & Discover',
-                desc: 'Search for any service or business by name, category, or city. Browse through 700+ verified businesses.',
-                color: 'bg-blue-600',
-              },
-              {
-                step: '02', icon: BadgeCheck, title: 'Compare & Choose',
-                desc: 'Read reviews, compare ratings, view business profiles, and contact directly or request a quote.',
-                color: 'bg-teal-600',
-              },
-              {
-                step: '03', icon: TrendingUp, title: 'Connect & Grow',
-                desc: 'Get in touch via phone, WhatsApp, or quote form. Businesses respond within 24 hours.',
-                color: 'bg-indigo-600',
-              },
+              { step: '01', icon: Search,    title: 'Search & Discover',  desc: 'Search for any service or business by name, category, or city.', color: '#1a56db' },
+              { step: '02', icon: BadgeCheck,title: 'Compare & Choose',   desc: 'Read reviews, compare ratings, view business profiles.', color: '#06b6d4' },
+              { step: '03', icon: Zap,       title: 'Connect & Grow',     desc: 'Get in touch via phone, WhatsApp, or quote form within 24 hours.', color: '#1a56db' },
             ].map(({ step, icon: Icon, title, desc, color }) => (
-              <div key={step} className="text-center group">
-                <div className={`w-16 h-16 ${color} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon size={28} className="text-white" />
+              <div key={step} style={{ textAlign: 'center' }}>
+                <div style={{
+                  width: 64, height: 64, borderRadius: 18, background: color,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 16px', boxShadow: `0 8px 24px ${color}33`,
+                  transition: 'transform 0.2s',
+                }}>
+                  <Icon size={28} color="#fff" />
                 </div>
-                <div className="text-xs font-bold text-slate-400 mb-2">STEP {step}</div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed max-w-xs mx-auto">{desc}</p>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', marginBottom: 6 }}>STEP {step}</div>
+                <h3 style={{ fontSize: 17, fontWeight: 800, color: '#111', marginBottom: 8 }}>{title}</h3>
+                <p style={{ fontSize: 14, color: '#717171', lineHeight: 1.6, maxWidth: 260, margin: '0 auto' }}>{desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ───────── WHY CHOOSE US ───────── */}
-      <section className="py-16 bg-gradient-to-br from-blue-50 to-teal-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mb-4">
-                <Shield size={12} /> Why Choose Us
-              </div>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-5">
-                Trusted by Thousands of{' '}
-                <span className="gradient-text">Businesses & Customers</span>
-              </h2>
-              <p className="text-slate-500 mb-8 leading-relaxed">
-                Right Ads Digital is India's most trusted business directory with a rigorous verification process, real reviews, and a powerful lead-generation system.
-              </p>
-              <div className="space-y-4">
-                {[
-                  { icon: BadgeCheck, title: 'Verified Businesses', desc: 'Every listed business is manually reviewed and verified.', color: 'text-teal-600 bg-teal-50' },
-                  { icon: Shield, title: 'Secure & Reliable', desc: 'Your data is protected with enterprise-grade security.', color: 'text-blue-600 bg-blue-50' },
-                  { icon: Zap, title: 'Instant Lead Connection', desc: 'Connect directly with businesses via WhatsApp or quote forms.', color: 'text-indigo-600 bg-indigo-50' },
-                ].map(({ icon: Icon, title, desc, color }) => (
-                  <div key={title} className="flex items-start gap-4">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
-                      <Icon size={18} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{title}</h4>
-                      <p className="text-slate-500 text-sm">{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-8 flex gap-3">
-                <Link to="/apply" className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20">
-                  List Your Business
-                </Link>
-                <Link to="/search" className="border border-slate-200 text-slate-700 px-6 py-3 rounded-xl font-semibold text-sm hover:border-blue-400 hover:text-blue-600 transition-colors">
-                  Browse Directory
-                </Link>
-              </div>
+      {/* ══════════ WHY US ══════════ */}
+      <section style={{ padding: '60px 24px', background: '#f0f6ff' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 40, alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#dbeafe', color: '#1a56db', padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, marginBottom: 16 }}>
+              <Shield size={12} /> Why Choose Us
             </div>
-
-            {/* Right side cards */}
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { value: '700+', label: 'Verified Listings', icon: Building2, color: 'from-blue-500 to-indigo-600' },
-                { value: '10K+', label: 'Monthly Visitors', icon: Users, color: 'from-teal-500 to-emerald-600' },
-                { value: '8+', label: 'Categories', icon: Zap, color: 'from-violet-500 to-purple-600' },
-                { value: '4.8★', label: 'Average Rating', icon: Star, color: 'from-amber-500 to-orange-600' },
-              ].map(({ value, label, icon: Icon, color }) => (
-                <div key={label} className={`bg-gradient-to-br ${color} p-6 rounded-2xl flex flex-col items-center text-center shadow-lg`}>
-                  <Icon size={28} className="text-white/80 mb-2" />
-                  <div className="text-3xl font-black text-white">{value}</div>
-                  <div className="text-white/80 text-xs mt-1">{label}</div>
+            <h2 style={{ fontSize: 32, fontWeight: 900, color: '#111', lineHeight: 1.2, marginBottom: 16 }}>
+              Trusted by Thousands of Businesses & Customers
+            </h2>
+            <p style={{ color: '#717171', lineHeight: 1.7, marginBottom: 28 }}>
+              Right Ads Digital is India's most trusted business directory with a rigorous verification process, real reviews, and a powerful lead-generation system.
+            </p>
+            {[
+              { icon: BadgeCheck, title: 'Verified Businesses', desc: 'Every listing is manually reviewed and verified.', color: '#06b6d4' },
+              { icon: Shield,     title: 'Secure & Reliable',   desc: 'Your data is protected with enterprise-grade security.', color: '#1a56db' },
+              { icon: Zap,        title: 'Instant Connection',  desc: 'Connect directly via WhatsApp or quote forms.', color: '#1a56db' },
+            ].map(({ icon: Icon, title, desc, color }) => (
+              <div key={title} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 20 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={18} style={{ color }} />
                 </div>
-              ))}
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>{title}</div>
+                  <div style={{ fontSize: 13, color: '#717171' }}>{desc}</div>
+                </div>
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+              <Link to="/apply" style={{ background: '#1a56db', color: '#fff', padding: '12px 24px', borderRadius: 12, fontWeight: 700, fontSize: 14, textDecoration: 'none', transition: 'background 0.2s' }}>
+                List Your Business
+              </Link>
+              <Link to="/search" style={{ border: '1.5px solid #DDDDDD', color: '#333', padding: '12px 24px', borderRadius: 12, fontWeight: 600, fontSize: 14, textDecoration: 'none', transition: 'border-color 0.2s' }}>
+                Browse Directory
+              </Link>
             </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            {[
+              { value: '700+', label: 'Verified Listings', icon: Building2, bg: 'linear-gradient(135deg,#1a56db,#1e40af)' },
+              { value: '10K+', label: 'Monthly Visitors',  icon: Users,     bg: 'linear-gradient(135deg,#06b6d4,#0891b2)' },
+              { value: '19+',  label: 'Categories',        icon: Zap,       bg: 'linear-gradient(135deg,#1a56db,#7c3aed)' },
+              { value: '4.8★', label: 'Average Rating',    icon: Star,      bg: 'linear-gradient(135deg,#1a56db,#0891b2)' },
+            ].map(({ value, label, icon: Icon, bg }) => (
+              <div key={label} style={{ background: bg, borderRadius: 20, padding: '28px 20px', textAlign: 'center', boxShadow: '0 4px 20px rgba(26,86,219,0.2)' }}>
+                <Icon size={26} color="rgba(255,255,255,0.7)" style={{ marginBottom: 8 }} />
+                <div style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>{value}</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4 }}>{label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-
-
-      {/* ───────── FINAL CTA ───────── */}
-      <section className="py-16 hero-gradient">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col items-center text-center">
-          <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
-            Ready to List Your Business?
-          </h2>
-          <p className="text-blue-100 mb-8 max-w-xl">
-            Join 700+ verified businesses on Right Ads Digital and start receiving leads from thousands of potential customers today.
-          </p>
-          <Link
-            to="/apply"
-            className="inline-flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-slate-900 px-8 py-4 rounded-xl font-bold text-base transition-all duration-200 shadow-xl shadow-yellow-400/20 hover:scale-105"
-          >
-            List Your Business — It's Free <ArrowRight size={18} />
-          </Link>
-        </div>
+      {/* ══════════ FINAL CTA ══════════ */}
+      <section style={{ background: '#1a56db', padding: '64px 24px', textAlign: 'center' }}>
+        <h2 style={{ fontSize: 36, fontWeight: 900, color: '#fff', marginBottom: 12 }}>
+          Ready to List Your Business?
+        </h2>
+        <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: 32, fontSize: 16 }}>
+          Join 700+ verified businesses and start receiving leads today.
+        </p>
+        <Link to="/apply" style={{
+          display: 'inline-flex', alignItems: 'center', gap: 10,
+          background: '#fff', color: '#1a56db', fontWeight: 800, fontSize: 16,
+          padding: '14px 36px', borderRadius: 14, textDecoration: 'none',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.2)', transition: 'transform 0.2s',
+        }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+        >
+          List Your Business — It's Free <ArrowRight size={18} />
+        </Link>
       </section>
+
+      <style>{`
+        @keyframes fadeUp  { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:none; } }
+        @keyframes slide-in { from { opacity:0; transform:scale(1.04); } to { opacity:1; transform:none; } }
+        @keyframes slide-out{ from { opacity:1; } to { opacity:0; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
-};
-
-export default HomePage;
+}
