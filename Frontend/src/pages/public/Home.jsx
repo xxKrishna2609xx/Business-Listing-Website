@@ -81,33 +81,22 @@ const Pill = ({ label }) => (
   }}>{label}</span>
 );
 
-<<<<<<< HEAD
-const HomePage = () => {
+export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchCity, setSearchCity] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [pincode, setPincode] = useState('');
+  const [locLoading, setLocLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('featured');
+  const [bannerIdx, setBannerIdx] = useState(0);
+  const [bannerAnim, setBannerAnim] = useState('slide-in');
   const [categoriesList, setCategoriesList] = useState([]);
   const [businessesList, setBusinessesList] = useState([]);
-=======
-export default function HomePage() {
-  const [searchQuery, setSearchQuery]   = useState('');
-  const [searchCity,  setSearchCity]    = useState('');
-  const [pincode,     setPincode]       = useState('');
-  const [locLoading,  setLocLoading]    = useState(false);
-  const [loading,     setLoading]       = useState(true);
-  const [activeTab,   setActiveTab]     = useState('featured');
-  const [bannerIdx,   setBannerIdx]     = useState(0);
-  const [bannerAnim,  setBannerAnim]    = useState('slide-in');
->>>>>>> 920c53b81d7fcf90322c0fa7bcc4b1956f6a7388
   const navigate = useNavigate();
   const searchRef = useRef(null);
   const bannerTimer = useRef(null);
 
   useEffect(() => {
-<<<<<<< HEAD
     const loadData = async () => {
       try {
         setLoading(true);
@@ -124,10 +113,6 @@ export default function HomePage() {
       }
     };
     loadData();
-=======
-    const t = setTimeout(() => setLoading(false), 900);
-    return () => clearTimeout(t);
->>>>>>> 920c53b81d7fcf90322c0fa7bcc4b1956f6a7388
   }, []);
 
   /* ── Auto-advance banner every 5s ── */
@@ -349,13 +334,8 @@ export default function HomePage() {
             </h2>
           </div>
 
-<<<<<<< HEAD
-          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-x-2 gap-y-6 md:gap-x-4">
-            {categoriesList.map((cat, i) => {
-=======
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))', gap: '24px 16px' }}>
-            {categories.map((cat, i) => {
->>>>>>> 920c53b81d7fcf90322c0fa7bcc4b1956f6a7388
+            {categoriesList.map((cat, i) => {
               const Icon = iconMap[cat.icon] || Building2;
               return (
                 <Link key={cat.id} to={`/category/${cat.slug}`}
@@ -395,6 +375,116 @@ export default function HomePage() {
                 Popular Categories
               </span>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ───────── QUICK SERVICES & BOOKINGS SECTION ───────── */}
+      <section className="py-12 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-sm space-y-8">
+            
+            {/* Row 1: Daily Needs */}
+            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start lg:items-center">
+              {/* Left Column */}
+              <div className="w-full lg:w-1/4 pr-4">
+                <h3 className="text-2xl font-bold text-slate-900 mb-2 font-sans tracking-tight">
+                  Daily Needs
+                </h3>
+                <p className="text-sm text-slate-500 leading-relaxed mb-3">
+                  Find essential daily services and local supplies instantly near you
+                </p>
+                <Link
+                  to="/search?query=Daily+Needs"
+                  className="inline-flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  Explore More <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+
+              {/* Right Column */}
+              <div className="w-full lg:w-3/4 grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-6 md:gap-x-4">
+                {[
+                  { name: 'Groceries', icon: ShoppingBag, iconColor: 'text-indigo-500 fill-indigo-50', query: 'Groceries' },
+                  { name: 'Fruits & Veg', icon: Apple, iconColor: 'text-emerald-500 fill-emerald-50', query: 'Vegetables' },
+                  { name: 'Milk & Dairy', icon: Milk, iconColor: 'text-blue-500 fill-blue-50', query: 'Dairy' },
+                  { name: 'Medicines', icon: Pill, iconColor: 'text-rose-500 fill-rose-50', query: 'Pharmacy' },
+                  { name: 'Water Supplier', icon: Droplet, iconColor: 'text-cyan-500 fill-cyan-50', query: 'Water' },
+                  { name: 'Laundry/Dry', icon: WashingMachine, iconColor: 'text-amber-500 fill-amber-50', query: 'Laundry' },
+                ].map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={idx}
+                      to={`/search?query=${encodeURIComponent(item.query)}`}
+                      className="group flex flex-col items-center w-full text-center"
+                    >
+                      <div className="w-20 h-20 bg-white border border-slate-200 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:border-blue-500 group-hover:shadow-md group-hover:-translate-y-1 cursor-pointer">
+                        <Icon size={32} strokeWidth={1.5} className={`${item.iconColor} transition-transform duration-300 group-hover:scale-110`} />
+                      </div>
+                      <span className="text-xs sm:text-[13px] font-bold text-slate-700 mt-2 text-center group-hover:text-blue-600 transition-colors leading-tight">
+                        {item.name}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Separator */}
+            <div className="border-t border-slate-200 -mx-6 md:-mx-8" />
+
+            {/* Row 2: Travel Bookings */}
+            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start lg:items-center">
+              {/* Left Column */}
+              <div className="w-full lg:w-1/4 pr-4">
+                <h3 className="text-2xl font-bold text-slate-900 mb-2 font-sans tracking-tight">
+                  Travel Bookings
+                </h3>
+                <p className="text-sm text-slate-500 leading-relaxed mb-3">
+                  Instant ticket bookings for your best travel and commute experiences
+                </p>
+                <Link
+                  to="/search?query=Travel"
+                  className="inline-flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  Explore More <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+
+              {/* Right Column */}
+              <div className="w-full lg:w-3/4 grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-6 md:gap-x-4">
+                {[
+                  { name: 'Flight', icon: Plane, iconColor: 'text-sky-500 fill-sky-50', subtext: 'Powered By\nEasemytrip.com', query: 'Flights' },
+                  { name: 'Bus', icon: Bus, iconColor: 'text-red-500 fill-red-50', subtext: 'Affordable Rides', query: 'Bus' },
+                  { name: 'Train', icon: Train, iconColor: 'text-indigo-600 fill-indigo-50', subtext: '', query: 'Train' },
+                  { name: 'Hotel', icon: Hotel, iconColor: 'text-emerald-500 fill-emerald-50', subtext: 'Budget-friendly\nStay', query: 'Hotels' },
+                  { name: 'Car Rentals', icon: Car, iconColor: 'text-blue-500 fill-blue-50', subtext: 'Drive Easy\nAnywhere', query: 'Car Rentals' },
+                ].map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={idx}
+                      to={`/search?query=${encodeURIComponent(item.query)}`}
+                      className="group flex flex-col items-center w-full text-center"
+                    >
+                      <div className="w-20 h-20 bg-white border border-slate-200 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:border-blue-500 group-hover:shadow-md group-hover:-translate-y-1 cursor-pointer">
+                        <Icon size={32} strokeWidth={1.5} className={`${item.iconColor} transition-transform duration-300 group-hover:scale-110`} />
+                      </div>
+                      <span className="text-xs sm:text-[13px] font-bold text-slate-700 mt-2 text-center group-hover:text-blue-600 transition-colors leading-tight">
+                        {item.name}
+                      </span>
+                      {item.subtext && (
+                        <span className="text-[10px] text-emerald-600 font-semibold mt-1 leading-tight whitespace-pre-line text-center max-w-[96px]">
+                          {item.subtext}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
