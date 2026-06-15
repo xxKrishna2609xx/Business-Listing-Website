@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { dashboardStats, businesses, applications, leads } from '../../data/mockData';
+import { adminService } from '../../services/adminService';
 
 const StatCard = ({ icon: Icon, label, value, change, color, to }) => (
   <Link to={to || '#'} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all duration-200 group">
@@ -27,21 +27,40 @@ const StatCard = ({ icon: Icon, label, value, change, color, to }) => (
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
+  const [dashboardStats, setDashboardStats] = useState({});
+  const [recentApps, setRecentApps] = useState([]);
+  const [recentLeads, setRecentLeads] = useState([]);
+  const [topBusinesses, setTopBusinesses] = useState([]);
 
   useEffect(() => {
-    setTimeout(() => setLoading(false), 800);
+    const fetchAll = async () => {
+      try {
+        const [stats, apps, leads, bizList] = await Promise.all([
+          adminService.getStats(),
+          adminService.getApplications(),
+          adminService.getLeads(),
+          adminService.getListings(),
+        ]);
+        setDashboardStats(stats);
+        setRecentApps(apps.slice(0, 3));
+        setRecentLeads(leads.slice(0, 3));
+        setTopBusinesses(bizList.slice(0, 4));
+      } catch {
+        // silently fail — show empty state
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
   }, []);
 
-  const recentApps = applications.slice(0, 3);
-  const recentLeads = leads.slice(0, 3);
-
   const stats = [
-    { icon: Building2, label: 'Total Listings', value: dashboardStats.totalListings, color: 'bg-blue-600', change: '+12 this month', to: '/admin/listings' },
-    { icon: Clock, label: 'Pending Applications', value: dashboardStats.pendingApplications, color: 'bg-amber-500', change: 'Needs review', to: '/admin/applications' },
-    { icon: CheckCircle, label: 'Approved Listings', value: dashboardStats.approvedListings, color: 'bg-teal-600', change: '+8 this week', to: '/admin/listings' },
-    { icon: XCircle, label: 'Rejected', value: dashboardStats.rejectedListings, color: 'bg-red-500', to: '/admin/applications' },
-    { icon: Sparkles, label: 'Featured Listings', value: dashboardStats.featuredListings, color: 'bg-indigo-600', to: '/admin/listings' },
-    { icon: MessageSquare, label: 'Total Leads', value: dashboardStats.totalLeads, color: 'bg-rose-500', change: '+5 today', to: '/admin/leads' },
+    { icon: Building2,    label: 'Total Listings',       value: dashboardStats.totalListings       ?? '—', color: 'bg-blue-600',   change: '+12 this month', to: '/admin/listings' },
+    { icon: Clock,        label: 'Pending Applications', value: dashboardStats.pendingApplications ?? '—', color: 'bg-amber-500',  change: 'Needs review',   to: '/admin/applications' },
+    { icon: CheckCircle,  label: 'Approved Listings',    value: dashboardStats.approvedListings    ?? '—', color: 'bg-teal-600',   change: '+8 this week',   to: '/admin/listings' },
+    { icon: XCircle,      label: 'Rejected',             value: dashboardStats.rejectedListings    ?? '—', color: 'bg-red-500',    to: '/admin/applications' },
+    { icon: Sparkles,     label: 'Featured Listings',    value: dashboardStats.featuredListings    ?? '—', color: 'bg-indigo-600', to: '/admin/listings' },
+    { icon: MessageSquare,label: 'Total Leads',          value: dashboardStats.totalLeads          ?? '—', color: 'bg-rose-500',   change: '+5 today',       to: '/admin/leads' },
   ];
 
   if (loading) {
@@ -85,7 +104,7 @@ const Dashboard = () => {
               </div>
             ))}
           </div>
-          {applications.length === 0 && (
+          {recentApps.length === 0 && (
             <div className="text-center py-8 text-slate-400 text-sm">No pending applications</div>
           )}
         </div>
@@ -129,7 +148,7 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {businesses.slice(0, 4).map(biz => (
+                {topBusinesses.map(biz => (
                   <tr key={biz.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2.5">

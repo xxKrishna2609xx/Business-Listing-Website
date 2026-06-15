@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search, MapPin, Filter, ChevronDown, SlidersHorizontal, X, Building2 } from 'lucide-react';
+import { Search, MapPin, SlidersHorizontal, X, Building2 } from 'lucide-react';
 import BusinessCard from '../../components/business/BusinessCard';
 import { BusinessCardSkeleton } from '../../components/common/Skeletons';
-import { businesses, categories } from '../../data/mockData';
+import { businessService } from '../../services/businessService';
+import { categoryService } from '../../services/categoryService';
 
 const SearchResults = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [query, setQuery] = useState(searchParams.get('query') || '');
   const [city, setCity] = useState(searchParams.get('city') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
@@ -16,68 +18,48 @@ const SearchResults = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState('');
 
+  // Load categories once on mount
+  useEffect(() => {
+    categoryService.getCategories().then(setCategories).catch(() => {});
+  }, []);
+
   // Reset selected brand when query or category changes
   useEffect(() => {
     setSelectedBrand('');
   }, [query, selectedCategory]);
 
-  // Compute unique brands present in the listings matching the category & search query (ignoring brand selection)
+  // Compute unique brands client-side from the current results (excluding brand filter)
   const availableBrands = (() => {
-    let baseFiltered = businesses.filter(b => b.status === 'APPROVED');
-    if (query) {
-      baseFiltered = baseFiltered.filter(b =>
-        b.businessName.toLowerCase().includes(query.toLowerCase()) ||
-        b.description.toLowerCase().includes(query.toLowerCase()) ||
-        b.services?.some(s => s.toLowerCase().includes(query.toLowerCase())) ||
-        b.categoryName.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-    if (city) {
-      baseFiltered = baseFiltered.filter(b => b.city.toLowerCase().includes(city.toLowerCase()));
-    }
-    if (selectedCategory) {
-      baseFiltered = baseFiltered.filter(b => b.categoryId === selectedCategory);
-    }
-    // Extract unique brands
     const brandsSet = new Set();
-    baseFiltered.forEach(b => {
-      if (b.brands) {
-        b.brands.forEach(br => brandsSet.add(br));
-      }
+    results.forEach(b => {
+      if (b.brands) b.brands.forEach(br => brandsSet.add(br));
     });
     return [...brandsSet];
   })();
 
   useEffect(() => {
     setLoading(true);
-    const timer = setTimeout(() => {
-      let filtered = businesses.filter(b => b.status === 'APPROVED');
+    const timer = setTimeout(async () => {
+      try {
+        const params = { sort: sortBy };
+        if (query) params.query = query;
+        if (city) params.city = city;
+        if (selectedCategory) params.category = selectedCategory;
 
-      if (query) {
-        filtered = filtered.filter(b =>
-          b.businessName.toLowerCase().includes(query.toLowerCase()) ||
-          b.description.toLowerCase().includes(query.toLowerCase()) ||
-          b.services?.some(s => s.toLowerCase().includes(query.toLowerCase())) ||
-          b.categoryName.toLowerCase().includes(query.toLowerCase())
-        );
-      }
-      if (city) {
-        filtered = filtered.filter(b => b.city.toLowerCase().includes(city.toLowerCase()));
-      }
-      if (selectedCategory) {
-        filtered = filtered.filter(b => b.categoryId === selectedCategory);
-      }
-      if (selectedBrand) {
-        filtered = filtered.filter(b => b.brands?.includes(selectedBrand));
-      }
+        let data = await businessService.getBusinesses(params);
 
-      if (sortBy === 'rating') filtered.sort((a, b) => b.rating - a.rating);
-      else if (sortBy === 'reviews') filtered.sort((a, b) => b.reviewCount - a.reviewCount);
-      else if (sortBy === 'latest') filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        // Client-side brand filter (not yet supported server-side)
+        if (selectedBrand) {
+          data = data.filter(b => b.brands?.includes(selectedBrand));
+        }
 
-      setResults(filtered);
-      setLoading(false);
-    }, 800);
+        setResults(data);
+      } catch {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 600);
     return () => clearTimeout(timer);
   }, [query, city, selectedCategory, selectedBrand, sortBy, searchParams]);
 

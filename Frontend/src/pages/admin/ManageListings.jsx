@@ -1,14 +1,22 @@
-import { useState } from 'react';
-import { Search, BadgeCheck, Sparkles, Trash2, Edit2, Star, Eye, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, BadgeCheck, Sparkles, Trash2, Star, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { businesses as initialBusinesses } from '../../data/mockData';
+import { adminService } from '../../services/adminService';
 import toast from 'react-hot-toast';
 
 const ManageListings = () => {
-  const [listings, setListings] = useState(initialBusinesses);
+  const [listings, setListings] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
   const [search, setSearch] = useState('');
   const [filterFeatured, setFilterFeatured] = useState('ALL');
+
+  useEffect(() => {
+    adminService.getListings()
+      .then(setListings)
+      .catch(() => toast.error('Failed to load listings.'))
+      .finally(() => setLoadingData(false));
+  }, []);
 
   const filtered = listings.filter(b => {
     const matchSearch = b.businessName.toLowerCase().includes(search.toLowerCase()) ||
@@ -20,20 +28,35 @@ const ManageListings = () => {
     return matchSearch && matchFeatured;
   });
 
-  const toggleVerified = (id) => {
-    setListings(prev => prev.map(b => b.id === id ? { ...b, verified: !b.verified } : b));
-    toast.success('Verification status updated');
+  const toggleVerified = async (id, current) => {
+    try {
+      const updated = await adminService.updateListing(id, { verified: !current });
+      setListings(prev => prev.map(b => b.id === id ? updated : b));
+      toast.success('Verification status updated');
+    } catch {
+      toast.error('Failed to update listing.');
+    }
   };
 
-  const toggleFeatured = (id) => {
-    setListings(prev => prev.map(b => b.id === id ? { ...b, featured: !b.featured } : b));
-    toast.success('Featured status updated');
+  const toggleFeatured = async (id, current) => {
+    try {
+      const updated = await adminService.updateListing(id, { featured: !current });
+      setListings(prev => prev.map(b => b.id === id ? updated : b));
+      toast.success('Featured status updated');
+    } catch {
+      toast.error('Failed to update listing.');
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Delete this listing permanently?')) {
-      setListings(prev => prev.filter(b => b.id !== id));
-      toast.success('Listing deleted');
+      try {
+        await adminService.deleteListing(id);
+        setListings(prev => prev.filter(b => b.id !== id));
+        toast.success('Listing deleted');
+      } catch {
+        toast.error('Failed to delete listing.');
+      }
     }
   };
 
@@ -104,7 +127,7 @@ const ManageListings = () => {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => toggleVerified(biz.id)}
+                        onClick={() => toggleVerified(biz.id, biz.verified)}
                         className={`text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
                           biz.verified
                             ? 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100'
@@ -116,7 +139,7 @@ const ManageListings = () => {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => toggleFeatured(biz.id)}
+                        onClick={() => toggleFeatured(biz.id, biz.featured)}
                         className={`text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
                           biz.featured
                             ? 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'

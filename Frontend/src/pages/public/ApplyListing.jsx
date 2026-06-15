@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Building2, User, Mail, Phone, MapPin, Globe, FileText,
   Upload, CheckCircle, ChevronRight, Sparkles, AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { categories, subcategories } from '../../data/mockData';
+import { categoryService } from '../../services/categoryService';
+import { adminService } from '../../services/adminService';
 
 const steps = ['Business Info', 'Location', 'Media & Socials', 'Review'];
 
@@ -13,6 +14,8 @@ const ApplyListing = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [form, setForm] = useState({
     businessName: '', ownerName: '', email: '', phone: '',
     categoryId: '', subcategoryId: '', address: '', city: '',
@@ -21,7 +24,20 @@ const ApplyListing = () => {
   });
   const [errors, setErrors] = useState({});
 
-  const filteredSubs = subcategories.filter(s => s.categoryId === form.categoryId);
+  useEffect(() => {
+    categoryService.getCategories().then(setCategories).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (form.categoryId) {
+      const cat = categories.find(c => c.id === form.categoryId);
+      if (cat) {
+        categoryService.getSubcategories(cat.slug).then(setSubcategories).catch(() => {});
+      }
+    } else {
+      setSubcategories([]);
+    }
+  }, [form.categoryId, categories]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -64,10 +80,29 @@ const ApplyListing = () => {
 
   const handleSubmit = async () => {
     setLoading(true);
-    await new Promise(r => setTimeout(r, 2000));
-    setLoading(false);
-    setSubmitted(true);
-    toast.success('Application submitted successfully!');
+    try {
+      await adminService.submitApplication({
+        businessName: form.businessName,
+        ownerName: form.ownerName,
+        email: form.email,
+        phone: form.phone,
+        categoryId: form.categoryId,
+        subcategoryId: form.subcategoryId || '',
+        address: form.address,
+        city: form.city,
+        state: form.state,
+        website: form.website || '',
+        description: form.description,
+        services: [],
+      });
+      setSubmitted(true);
+      toast.success('Application submitted successfully!');
+    } catch (err) {
+      const msg = err?.response?.data?.detail || 'Submission failed. Please try again.';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const InputField = ({ name, label, type = 'text', placeholder, icon: Icon, required }) => (

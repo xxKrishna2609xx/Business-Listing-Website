@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { authService } from '../services/authService';
 
 const AuthContext = createContext(null);
 
@@ -6,158 +7,84 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // On mount: validate any stored JWT and hydrate user state
   useEffect(() => {
-    // Check localStorage for persisted session
-    const savedUser = localStorage.getItem('auth_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    authService
+      .getMe()
+      .then((userData) => {
+        setUser(userData);
+        localStorage.setItem('auth_user', JSON.stringify(userData));
+      })
+      .catch(() => {
+        // Token invalid / expired — clear storage
+        authService.logout();
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  // Admin login utility
-  const loginAdmin = (email, password) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (email === 'admin@rightads.digital' && password === 'Admin@123') {
-          const adminUser = { email, role: 'admin', name: 'Admin User', uid: 'admin-001' };
-          setUser(adminUser);
-          localStorage.setItem('auth_user', JSON.stringify(adminUser));
-          resolve(adminUser);
-        } else {
-          reject(new Error('Invalid credentials. Use admin@rightads.digital / Admin@123'));
-        }
-      }, 800);
-    });
+  /** Login with email + password. Works for both regular users and admin. */
+  const loginUser = async (email, password) => {
+    const userData = await authService.login(email, password);
+    setUser(userData);
+    localStorage.setItem('auth_user', JSON.stringify(userData));
+    return userData;
   };
 
-  // Regular user/owner login
-  const loginUser = (email, password) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        // If it's the admin, use admin login
-        if (email === 'admin@rightads.digital') {
-          if (password === 'Admin@123') {
-            const adminUser = { email, role: 'admin', name: 'Admin User', uid: 'admin-001' };
-            setUser(adminUser);
-            localStorage.setItem('auth_user', JSON.stringify(adminUser));
-            resolve(adminUser);
-          } else {
-            reject(new Error('Invalid admin credentials.'));
-          }
-          return;
-        }
+  /** Alias used by AdminLogin page. */
+  const loginAdmin = loginUser;
 
-        // Get users list
-        const users = JSON.parse(localStorage.getItem('local_users') || '[]');
-        const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-        if (foundUser) {
-          if (foundUser.password === password) {
-            // Don't persist password in memory
-            const { password: _, ...safeUser } = foundUser;
-            setUser(safeUser);
-            localStorage.setItem('auth_user', JSON.stringify(safeUser));
-            resolve(safeUser);
-          } else {
-            reject(new Error('Invalid password.'));
-          }
-        } else {
-          reject(new Error('No account found with this email.'));
-        }
-      }, 800);
-    });
+  /** Register a new user account. */
+  const signupUser = async (name, email, phone, password) => {
+    const userData = await authService.signup(name, email, phone, password);
+    setUser(userData);
+    localStorage.setItem('auth_user', JSON.stringify(userData));
+    return userData;
   };
 
-  // Regular user registration
-  const signupUser = (name, email, phone, password) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem('local_users') || '[]');
-        
-        // Check if email already exists
-        const exists = users.some(u => u.email.toLowerCase() === email.toLowerCase() || u.phone === phone);
-        if (exists) {
-          reject(new Error('Account with this email or phone number already exists.'));
-          return;
-        }
+  /**
+   * Toggle bookmark for a business.
+   * Calls the backend and updates local state with the new bookmarks list.
+   */
+  const toggleBookmark = async (businessId) => {
+    if (!user || user.role === 'admin') return false;
 
-        // Create new user (structured like a MongoDB document)
-        const newUser = {
-          uid: 'usr-' + Date.now().toString(36),
-          name,
-          email,
-          phone,
-          password,
-          role: 'user',
-          bookmarks: [],
-          createdAt: new Date().toISOString()
-        };
-
-        users.push(newUser);
-        localStorage.setItem('local_users', JSON.stringify(users));
-
-        // Log in the user immediately
-        const { password: _, ...safeUser } = newUser;
-        setUser(safeUser);
-        localStorage.setItem('auth_user', JSON.stringify(safeUser));
-        resolve(safeUser);
-      }, 800);
-    });
-  };
-
-  // Toggle bookmark listing
-  const toggleBookmark = (businessId) => {
-    if (!user) return false;
-
-    // Admin cannot bookmark
-    if (user.role === 'admin') return false;
-
-    const users = JSON.parse(localStorage.getItem('local_users') || '[]');
-    const userIndex = users.findIndex(u => u.uid === user.uid);
-
-    if (userIndex !== -1) {
-      const userRecord = users[userIndex];
-      const bookmarks = userRecord.bookmarks || [];
-      const isBookmarked = bookmarks.includes(businessId);
-
-      let newBookmarks;
-      if (isBookmarked) {
-        newBookmarks = bookmarks.filter(id => id !== businessId);
-      } else {
-        newBookmarks = [...bookmarks, businessId];
-      }
-
-      userRecord.bookmarks = newBookmarks;
-      users[userIndex] = userRecord;
-      localStorage.setItem('local_users', JSON.stringify(users));
-
-      // Update in-memory user and active session
+    try {
+      const newBookmarks = await authService.toggleBookmark(businessId);
       const updatedUser = { ...user, bookmarks: newBookmarks };
       setUser(updatedUser);
       localStorage.setItem('auth_user', JSON.stringify(updatedUser));
       return true;
+    } catch {
+      return false;
     }
-    return false;
   };
 
   const logout = () => {
+    authService.logout();
     setUser(null);
-    localStorage.removeItem('auth_user');
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      loginAdmin, 
-      loginUser,
-      signupUser,
-      toggleBookmark,
-      logout, 
-      isAdmin: user?.role === 'admin',
-      isLoggedIn: !!user
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        loginUser,
+        loginAdmin,
+        signupUser,
+        toggleBookmark,
+        logout,
+        isAdmin: user?.role === 'admin',
+        isLoggedIn: !!user,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

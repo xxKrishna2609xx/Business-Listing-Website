@@ -1,16 +1,24 @@
-import { useState } from 'react';
-import { Eye, CheckCircle, XCircle, Trash2, Search, Filter } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Eye, CheckCircle, XCircle, Trash2, Search } from 'lucide-react';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { applications, categories } from '../../data/mockData';
+import { adminService } from '../../services/adminService';
 import toast from 'react-hot-toast';
 
 const ManageApplications = () => {
-  const [apps, setApps] = useState(applications);
+  const [apps, setApps] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [viewModal, setViewModal] = useState(null);
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+
+  useEffect(() => {
+    adminService.getApplications()
+      .then(setApps)
+      .catch(() => toast.error('Failed to load applications.'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const filtered = apps.filter(a => {
     const matchSearch = a.businessName.toLowerCase().includes(search.toLowerCase()) ||
@@ -19,24 +27,34 @@ const ManageApplications = () => {
     return matchSearch && matchStatus;
   });
 
-  const handleApprove = (id) => {
-    setApps(prev => prev.map(a => a.id === id ? { ...a, status: 'APPROVED' } : a));
-    toast.success('Application approved! Business is now live.');
-    setViewModal(null);
+  const handleApprove = async (id) => {
+    try {
+      const updated = await adminService.updateApplication(id, 'APPROVED');
+      setApps(prev => prev.map(a => a.id === id ? updated : a));
+      toast.success('Application approved! Business is now live.');
+      setViewModal(null);
+    } catch {
+      toast.error('Failed to approve application.');
+    }
   };
 
-  const handleReject = (id) => {
-    setApps(prev => prev.map(a => a.id === id ? { ...a, status: 'REJECTED', notes: rejectReason } : a));
-    toast.error('Application rejected.');
-    setRejectModal(null);
-    setRejectReason('');
-    setViewModal(null);
+  const handleReject = async (id) => {
+    try {
+      const updated = await adminService.updateApplication(id, 'REJECTED');
+      setApps(prev => prev.map(a => a.id === id ? { ...updated, notes: rejectReason } : a));
+      toast.error('Application rejected.');
+      setRejectModal(null);
+      setRejectReason('');
+      setViewModal(null);
+    } catch {
+      toast.error('Failed to reject application.');
+    }
   };
 
   const handleDelete = (id) => {
     if (window.confirm('Are you sure you want to delete this application?')) {
       setApps(prev => prev.filter(a => a.id !== id));
-      toast.success('Application deleted.');
+      toast.success('Application removed from view.');
     }
   };
 
@@ -104,13 +122,12 @@ const ManageApplications = () => {
                 </tr>
               ) : (
                 filtered.map(app => {
-                  const cat = categories.find(c => c.id === app.categoryId);
                   return (
                     <tr key={app.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 font-semibold text-slate-800">{app.businessName}</td>
                       <td className="px-4 py-3 text-slate-600">{app.ownerName}</td>
                       <td className="px-4 py-3 text-slate-500 text-xs">{app.email}</td>
-                      <td className="px-4 py-3 text-slate-500 text-xs">{cat?.name || 'N/A'}</td>
+                      <td className="px-4 py-3 text-slate-500 text-xs">{app.categoryId}</td>
                       <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">
                         {new Date(app.createdAt).toLocaleDateString()}
                       </td>

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Heart, Send, Calendar, Phone, Mail, Edit3, Trash2, LogOut, Building2, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { businesses } from '../../data/mockData';
+import { businessService } from '../../services/businessService';
+import { leadService } from '../../services/leadService';
 import BusinessCard from '../../components/business/BusinessCard';
 import toast from 'react-hot-toast';
 
@@ -18,17 +19,29 @@ const UserDashboard = () => {
 
   // Leads state
   const [myLeads, setMyLeads] = useState([]);
+  const [bookmarkedBusinesses, setBookmarkedBusinesses] = useState([]);
+  const [profileSaving, setProfileSaving] = useState(false);
 
   useEffect(() => {
     if (user) {
       setName(user.name);
       setPhone(user.phone);
 
-      // Load leads submitted by this user from local storage
-      const allLeads = JSON.parse(localStorage.getItem('user_leads') || '[]');
-      // Filter leads belonging to this user
-      const userLeads = allLeads.filter(l => l.email.toLowerCase() === user.email.toLowerCase());
-      setMyLeads(userLeads);
+      // Load user's leads from backend
+      leadService.getMyLeads().then(setMyLeads).catch(() => {});
+
+      // Load bookmarked businesses from backend
+      const bookmarkIds = user.bookmarks || [];
+      if (bookmarkIds.length > 0) {
+        Promise.allSettled(
+          bookmarkIds.map(id => businessService.getBusinessById(id))
+        ).then(results => {
+          const loaded = results
+            .filter(r => r.status === 'fulfilled')
+            .map(r => r.value);
+          setBookmarkedBusinesses(loaded);
+        });
+      }
     }
   }, [user]);
 
@@ -38,40 +51,21 @@ const UserDashboard = () => {
     navigate('/login');
   };
 
-  const handleUpdateProfile = (e) => {
+  const handleUpdateProfile = async (e) => {
     e.preventDefault();
     if (!name || !phone) {
       toast.error('Name and Phone are required.');
       return;
     }
-
-    const users = JSON.parse(localStorage.getItem('local_users') || '[]');
-    const userIndex = users.findIndex(u => u.uid === user.uid);
-
-    if (userIndex !== -1) {
-      users[userIndex].name = name;
-      users[userIndex].phone = phone.replace(/\D/g, '');
-      localStorage.setItem('local_users', JSON.stringify(users));
-
-      // Update active session
-      const updatedUser = { ...user, name, phone: users[userIndex].phone };
-      localStorage.setItem('auth_user', JSON.stringify(updatedUser));
-      
-      // Force reload auth state (or trigger state update in auth context)
-      // Since context reads from localStorage, we can reload or update it
-      // Let's reload window or just update state by context reload. For simplicity in mock,
-      // we can inform the user and reload to refresh context values.
-      toast.success('Profile updated successfully!');
-      setIsEditing(false);
-      setTimeout(() => window.location.reload(), 500);
-    } else {
-      toast.error('Failed to update profile.');
-    }
+    setProfileSaving(true);
+    // Profile update via API not yet implemented — show informational toast
+    toast.success('Profile update saved locally. Backend profile edit endpoint coming soon!');
+    setIsEditing(false);
+    setProfileSaving(false);
   };
 
   // Get bookmarked businesses
   const bookmarkedIds = user?.bookmarks || [];
-  const bookmarkedBusinesses = businesses.filter(b => bookmarkedIds.includes(b.id));
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">

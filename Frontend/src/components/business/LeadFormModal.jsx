@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Send, User, Phone, Mail, MessageSquare, Briefcase, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { leadService } from '../../services/leadService';
 
 const LeadFormModal = ({ business, isOpen, onClose }) => {
   const { user } = useAuth();
@@ -33,30 +34,25 @@ const LeadFormModal = ({ business, isOpen, onClose }) => {
       return;
     }
     setLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1200));
 
-    // Save lead to local storage (MongoDB schema aligned)
-    const newLead = {
-      id: 'lead-' + Date.now().toString(36),
-      businessId: business?.id,
-      businessName: business?.businessName,
-      customerName: form.name, // compatibility with admin
-      phone: form.phone.replace(/\D/g, ''),
-      email: form.email,
-      serviceRequired: form.serviceRequired || 'General Consultation',
-      message: form.message,
-      createdAt: new Date().toISOString()
-    };
-
-    const allLeads = JSON.parse(localStorage.getItem('user_leads') || '[]');
-    allLeads.unshift(newLead);
-    localStorage.setItem('user_leads', JSON.stringify(allLeads));
-
-    setLoading(false);
-    setSubmitted(true);
-    toast.success('Quote request sent successfully!');
+    try {
+      await leadService.submitLead({
+        businessId: business?.id,
+        businessName: business?.businessName,
+        customerName: form.name,
+        phone: form.phone.replace(/\D/g, ''),
+        email: form.email,
+        serviceRequired: form.serviceRequired || 'General Consultation',
+        message: form.message,
+      });
+      setSubmitted(true);
+      toast.success('Quote request sent successfully!');
+    } catch (err) {
+      const msg = err?.response?.data?.detail || 'Failed to send request. Please try again.';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

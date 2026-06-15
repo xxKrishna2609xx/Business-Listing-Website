@@ -8,8 +8,9 @@ import {
   ShoppingBag, Apple, Milk, Pill, Droplet, WashingMachine, Plane, Train, Bus
 } from 'lucide-react';
 import BusinessCard from '../../components/business/BusinessCard';
-import { businesses, categories } from '../../data/mockData';
 import { BusinessCardSkeleton } from '../../components/common/Skeletons';
+import { categoryService } from '../../services/categoryService';
+import { businessService } from '../../services/businessService';
 
 
 const iconMap = {
@@ -35,6 +36,8 @@ const HomePage = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('featured');
+  const [categoriesList, setCategoriesList] = useState([]);
+  const [businessesList, setBusinessesList] = useState([]);
   const navigate = useNavigate();
   const searchRef = useRef(null);
 
@@ -45,8 +48,22 @@ const HomePage = () => {
   ];
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1200);
-    return () => clearTimeout(timer);
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [cats, bizes] = await Promise.all([
+          categoryService.getCategories(),
+          businessService.getBusinesses()
+        ]);
+        setCategoriesList(cats || []);
+        setBusinessesList(bizes || []);
+      } catch (err) {
+        console.error('Failed to load home page data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -78,8 +95,8 @@ const HomePage = () => {
   };
 
   const displayedBusinesses = activeTab === 'featured'
-    ? businesses.filter(b => b.featured)
-    : businesses.slice().reverse().slice(0, 4);
+    ? businessesList.filter(b => b.featured)
+    : businessesList.slice().reverse().slice(0, 6);
 
   return (
     <div className="min-h-screen">
@@ -201,7 +218,7 @@ const HomePage = () => {
           </div>
 
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-x-2 gap-y-6 md:gap-x-4">
-            {categories.map((cat, i) => {
+            {categoriesList.map((cat, i) => {
               const Icon = iconMap[cat.icon] || Building2;
               return (
                 <Link

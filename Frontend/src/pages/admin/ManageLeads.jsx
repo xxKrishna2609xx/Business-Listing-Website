@@ -1,34 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Eye, Trash2, MessageSquare, Mail, Phone } from 'lucide-react';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { leads as initialLeads } from '../../data/mockData';
+import { adminService } from '../../services/adminService';
 import toast from 'react-hot-toast';
 
 const ManageLeads = () => {
-  const [leads, setLeads] = useState(() => {
-    const localLeads = JSON.parse(localStorage.getItem('user_leads') || '[]');
-    return [...localLeads, ...initialLeads];
-  });
+  const [leads, setLeads] = useState([]);
   const [search, setSearch] = useState('');
   const [viewLead, setViewLead] = useState(null);
 
+  useEffect(() => {
+    adminService.getLeads()
+      .then(setLeads)
+      .catch(() => toast.error('Failed to load leads.'));
+  }, []);
+
   const filtered = leads.filter(l =>
-    l.customerName.toLowerCase().includes(search.toLowerCase()) ||
-    l.businessName.toLowerCase().includes(search.toLowerCase()) ||
-    l.serviceRequired.toLowerCase().includes(search.toLowerCase())
+    l.customerName?.toLowerCase().includes(search.toLowerCase()) ||
+    l.businessName?.toLowerCase().includes(search.toLowerCase()) ||
+    l.serviceRequired?.toLowerCase().includes(search.toLowerCase())
   );
 
   const deleteLead = (id) => {
     if (window.confirm('Delete this lead?')) {
-      const updated = leads.filter(l => l.id !== id);
-      setLeads(updated);
-      
-      // Update local storage
-      const userLeads = JSON.parse(localStorage.getItem('user_leads') || '[]');
-      const filteredUserLeads = userLeads.filter(l => l.id !== id);
-      localStorage.setItem('user_leads', JSON.stringify(filteredUserLeads));
-
-      toast.success('Lead deleted');
+      setLeads(prev => prev.filter(l => l.id !== id));
+      toast.success('Lead removed from view.');
     }
   };
 

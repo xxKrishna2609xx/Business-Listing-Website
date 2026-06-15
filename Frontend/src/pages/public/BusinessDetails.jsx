@@ -7,7 +7,7 @@ import {
 import { Facebook, Instagram, Linkedin, Twitter } from '../../components/common/SocialIcons';
 
 import LeadFormModal from '../../components/business/LeadFormModal';
-import { businesses } from '../../data/mockData';
+import { businessService } from '../../services/businessService';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -32,11 +32,10 @@ const BusinessDetails = () => {
 
   useEffect(() => {
     setLoading(true);
-    setTimeout(() => {
-      const biz = businesses.find(b => b.id === id);
-      setBusiness(biz || null);
-      setLoading(false);
-    }, 800);
+    businessService.getBusinessById(id)
+      .then(data => setBusiness(data))
+      .catch(() => setBusiness(null))
+      .finally(() => setLoading(false));
   }, [id]);
 
   if (loading) {
