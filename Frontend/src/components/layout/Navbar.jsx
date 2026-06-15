@@ -1,314 +1,334 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import {
-  Search, MapPin, Menu, X,
-  Phone, LogIn, Bell, Sparkles, User
-} from 'lucide-react';
+import { Search, Menu, X, Globe, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import './Navbar.css';
 
-const Navbar = () => {
+const CATEGORIES = [
+  'All Categories','Food & Dining','Health & Wellness','Education',
+  'Real Estate','Technology','Retail','Travel','Beauty & Spa','Auto Services',
+];
+const SUGGESTIONS = [
+  'Web Development','SEO Services','Graphic Design',
+  'Social Media Marketing','Mobile App Development','Branding',
+];
+
+// BUG 2 FIX: each tab has an exact path match pattern
+const NAV_TABS = [
+  { label: 'Home',       to: '/',          match: (p) => p === '/'           },
+  { label: 'Categories', to: '/search',    match: (p) => p === '/search' || p.startsWith('/category') },
+  { label: 'Services',   to: '/search?query=services',    match: (p) => false               }, // never auto-active
+];
+
+export default function Navbar() {
   const { user, isLoggedIn, logout } = useAuth();
-  const [isScrolled, setIsScrolled] = useState(false);
+  const navigate  = useNavigate();
+  const location  = useLocation();
+
+  const [scrolled,   setScrolled]   = useState(false);
+  const [pillQ,      setPillQ]      = useState('');
+  const [pillLoc,    setPillLoc]    = useState('');
+  const [pillCat,    setPillCat]    = useState('All Categories');
+  const [focSec,     setFocSec]     = useState(null);
+  const [showSuggs,  setShowSuggs]  = useState(false);
+  const [compQ,      setCompQ]      = useState('');
+  const [compLoc,    setCompLoc]    = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchCity, setSearchCity] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const searchRef = useRef(null);
-  const userMenuRef = useRef(null);
+  const [ddOpen,     setDdOpen]     = useState(false);
+  const [mobileQ,    setMobileQ]    = useState('');
+  const [mobileCity, setMobileCity] = useState('');
 
-  const suggestions = [
-    'SEO Services', 'Web Development', 'Graphic Design', 'Social Media Marketing',
-    'Mobile App Development', 'Branding', 'Cloud Services', 'UI/UX Design',
-  ];
+  const pathname     = location.pathname;
+  const isHome       = pathname === '/';
+  const isSearchPage = pathname === '/search';
 
+  // expanded = homepage before scroll; compact = scrolled or any other page
+  const isCompact   = !isHome || scrolled;
+  // show compact search only on homepage-after-scroll — never on /search (BUG 2)
+  const showCompact = isCompact && !isSearchPage;
+
+  const pillRef = useRef(null);
+  const ddRef   = useRef(null);
+
+  // BUG 1 FIX: only track scroll for compact/expanded toggle — no hide behavior
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setShowSuggestions(false);
+    const fn = (e) => {
+      if (pillRef.current && !pillRef.current.contains(e.target)) {
+        setFocSec(null); setShowSuggs(false);
       }
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
-        setUserMenuOpen(false);
-      }
+      if (ddRef.current && !ddRef.current.contains(e.target)) setDdOpen(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
   }, []);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?query=${encodeURIComponent(searchQuery)}&city=${encodeURIComponent(searchCity)}`);
-      setShowSuggestions(false);
-      setMobileOpen(false);
-    }
+  useEffect(() => setMobileOpen(false), [pathname]);
+
+  const doSearch = (q, city = '') => {
+    if (!q.trim()) return;
+    navigate(`/search?query=${encodeURIComponent(q.trim())}&city=${encodeURIComponent(city)}`);
+    setShowSuggs(false); setMobileOpen(false);
   };
 
-  const isHome = location.pathname === '/';
+  const avatar = user?.name
+    ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : <User size={14} />;
+
+  const filtSuggs = SUGGESTIONS.filter(s =>
+    !pillQ || s.toLowerCase().includes(pillQ.toLowerCase())
+  ).slice(0, 5);
+
+  // BUG 1 FIX: navCls never includes nb--hidden / nb--visible
+  const navCls = ['nb', isCompact ? 'nb--compact nb--shadow' : 'nb--expanded'].join(' ');
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      isScrolled || !isHome
-        ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-slate-100'
-        : 'bg-transparent'
-    }`}>
-      {/* Top bar */}
+    <>
+      {/* Spacer on homepage so hero isn't hidden under fixed navbar */}
       {isHome && (
-        <div className={`hidden md:block text-xs py-1.5 transition-all duration-300 ${
-          isScrolled ? 'bg-blue-600 text-white' : 'bg-blue-900/50 text-blue-100'
-        }`}>
-          <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1">
-                <Phone size={11} /> +91 98765 00000
-              </span>
-              <span>|</span>
-              <span>support@rightadsdigital.com</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1">
-                <Sparkles size={11} /> 700+ Verified Businesses
-              </span>
-            </div>
-          </div>
-        </div>
+        <div style={{
+          height: isCompact ? 64 : 160,
+          transition: 'height 0.3s ease',
+          pointerEvents: 'none',
+        }} />
       )}
 
-      {/* Main nav */}
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center flex-shrink-0">
-            <img
-              src={isScrolled || !isHome ? '/logo.png' : '/logo-light.png'}
-              alt="Right Ads Logo"
-              className="h-10 w-auto"
-            />
-          </Link>
+      <nav className={navCls}>
+        <div className="nb__inner">
+          <div className="nb__top">
 
-          {/* Desktop Search – hidden on homepage hero (hero has its own) */}
-          {isHome && isScrolled && (
-            <div ref={searchRef} className="hidden flex-1 max-w-xl mx-6 relative lg:flex">
-              <form onSubmit={handleSearch} className="w-full flex">
-                <div className="relative flex-1">
-                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            {/* Logo */}
+            <Link to="/" className="nb__logo">
+              <img src="/logo.png" alt="Right Ads" />
+            </Link>
+
+            {/* BUG 2 FIX: only one tab active via match() */}
+            <div className="nb__tabs">
+              {NAV_TABS.map(({ label, to, match }) => (
+                <Link
+                  key={label}
+                  to={to}
+                  className={`nb__tab${match(pathname) ? ' nb__tab--active' : ''}`}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+
+            {/* Compact search — hidden on /search to avoid duplicate (BUG 2) */}
+            <div className={`nb__compact ${showCompact ? 'nb__compact--visible' : 'nb__compact--hidden'}`}>
+              <form
+                className="nb__compact-pill"
+                onSubmit={e => { e.preventDefault(); doSearch(compQ, compLoc); }}
+              >
+                <div className="nb__compact-sec">
+                  <div className="nb__compact-label">Where</div>
                   <input
-                    type="text"
-                    placeholder="Search businesses, services..."
-                    value={searchQuery}
-                    onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
-                    onFocus={() => setShowSuggestions(true)}
-                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-slate-200 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900"
+                    className="nb__compact-input"
+                    placeholder="Search businesses"
+                    value={compQ}
+                    onChange={e => setCompQ(e.target.value)}
                   />
                 </div>
-                <div className="relative border-l border-slate-200">
-                  <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <div className="nb__compact-div" />
+                <div className="nb__compact-sec" style={{ maxWidth: 100 }}>
+                  <div className="nb__compact-label">Location</div>
                   <input
-                    type="text"
+                    className="nb__compact-input"
                     placeholder="City"
-                    value={searchCity}
-                    onChange={(e) => setSearchCity(e.target.value)}
-                    className="pl-8 pr-3 py-2.5 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 w-28"
+                    value={compLoc}
+                    onChange={e => setCompLoc(e.target.value)}
                   />
                 </div>
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-r-xl text-sm font-medium transition-colors">
-                  Search
+                <div className="nb__compact-div" />
+                <div className="nb__compact-sec" style={{ maxWidth: 100 }}>
+                  <div className="nb__compact-label">Category</div>
+                  <select className="nb__compact-input" style={{ appearance: 'none' }}>
+                    {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <button type="submit" className="nb__compact-btn" aria-label="Search">
+                  <Search size={13} color="#fff" />
                 </button>
               </form>
-
-              {/* Search Suggestions */}
-              {showSuggestions && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-2xl border border-slate-100 z-50 overflow-hidden">
-                  <div className="px-3 py-2 text-xs text-slate-400 font-medium uppercase tracking-wide border-b border-slate-50">
-                    Popular Searches
-                  </div>
-                  {suggestions
-                    .filter(s => !searchQuery || s.toLowerCase().includes(searchQuery.toLowerCase()))
-                    .slice(0, 5)
-                    .map((s, i) => (
-                      <button
-                        key={i}
-                        onClick={() => { setSearchQuery(s); setShowSuggestions(false); }}
-                        className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2 transition-colors"
-                      >
-                        <Search size={13} className="text-slate-400" /> {s}
-                      </button>
-                    ))}
-                </div>
-              )}
             </div>
-          )}
 
-          <div className="hidden lg:flex items-center gap-2">
-            <Link
-              to="/apply"
-              className="ml-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30"
-            >
-              List Business
-            </Link>
-            
-            {/* User Dropdown / Sign In */}
-            {isLoggedIn ? (
-              <div className="relative ml-2" ref={userMenuRef}>
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 focus:outline-none cursor-pointer"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-blue-600/10 transition-colors">
-                    {user?.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U'}
-                  </div>
-                  <span className={`text-sm font-semibold hidden sm:inline ${
-                    isScrolled || !isHome ? 'text-slate-700' : 'text-white/95'
-                  }`}>
-                    {user?.name?.split(' ')[0]}
-                  </span>
+            {/* Right actions */}
+            <div className="nb__actions">
+              <Link to="/apply" className="nb__host-btn">List Business</Link>
+              <button className="nb__globe-btn" aria-label="Language"><Globe size={18} /></button>
+              <div style={{ position: 'relative' }} ref={ddRef}>
+                <button className="nb__user-btn" onClick={() => setDdOpen(v => !v)}>
+                  <Menu size={15} />
+                  <div className="nb__avatar">{avatar}</div>
                 </button>
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 animate-scale-in">
-                    <div className="px-4 py-2 border-b border-slate-50">
-                      <p className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase">Logged in as</p>
-                      <p className="text-xs font-bold text-slate-800 truncate mt-0.5">{user?.name}</p>
-                    </div>
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 font-semibold transition-colors"
-                    >
-                      My Dashboard
-                    </Link>
-                    {user?.role === 'admin' && (
-                      <Link
-                        to="/admin/dashboard"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-xs text-blue-600 hover:bg-blue-50 font-bold transition-colors"
-                      >
-                        Admin Panel
-                      </Link>
+                {ddOpen && (
+                  <div className="nb__dropdown">
+                    {isLoggedIn ? (
+                      <>
+                        <div className="nb__dd-header">
+                          <div className="nb__dd-label">Logged in as</div>
+                          <div className="nb__dd-name">{user?.name}</div>
+                        </div>
+                        <Link to="/dashboard" className="nb__dd-item nb__dd-item--bold"
+                          onClick={() => setDdOpen(false)}>My Dashboard</Link>
+                        {user?.role === 'admin' && (
+                          <Link to="/admin/dashboard" className="nb__dd-item nb__dd-item--blue"
+                            onClick={() => setDdOpen(false)}>Admin Panel</Link>
+                        )}
+                        <button
+                          className="nb__dd-item nb__dd-item--sep nb__dd-item--danger"
+                          onClick={() => { setDdOpen(false); logout(); toast.success('Logged out'); navigate('/'); }}
+                        >Sign Out</button>
+                      </>
+                    ) : (
+                      <>
+                        <Link to="/signup" className="nb__dd-item nb__dd-item--bold"
+                          onClick={() => setDdOpen(false)}>Sign up</Link>
+                        <Link to="/login" className="nb__dd-item"
+                          onClick={() => setDdOpen(false)}>Log in</Link>
+                        <Link to="/apply" className="nb__dd-item nb__dd-item--sep"
+                          onClick={() => setDdOpen(false)}>List your business</Link>
+                      </>
                     )}
-                    <button
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        logout();
-                        toast.success('Logged out successfully');
-                        navigate('/login');
-                      }}
-                      className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-xs text-red-500 hover:bg-red-50 font-semibold transition-colors border-t border-slate-50 mt-1 pt-2"
-                    >
-                      Sign Out
-                    </button>
                   </div>
                 )}
               </div>
-            ) : (
-              <Link
-                to="/login"
-                className={`ml-2 flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                  isScrolled || !isHome ? 'text-slate-600 hover:text-blue-600' : 'text-white/80 hover:text-white'
-                }`}
-              >
-                <LogIn size={15} /> Sign In
-              </Link>
-            )}
+            </div>
+
+            <button className="nb__hamburger" onClick={() => setMobileOpen(v => !v)}>
+              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
           </div>
 
-          {/* Mobile Menu Toggle */}
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className={`lg:hidden p-2 rounded-lg transition-colors ${
-              isScrolled || !isHome ? 'text-slate-700 hover:bg-slate-100' : 'text-white hover:bg-white/10'
-            }`}
-          >
-            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {mobileOpen && (
-        <div className="lg:hidden bg-white border-t border-slate-100 shadow-xl">
-          <div className="p-4 space-y-4">
-            {/* Mobile Search */}
-            {isHome && (
-              <form onSubmit={handleSearch} className="space-y-2">
-                <div className="relative">
-                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          {/* Expanded search pill — homepage only, collapses when scrolled */}
+          {isHome && (
+            <div className="nb__pill-row">
+              <form
+                ref={pillRef}
+                className="nb__pill"
+                onSubmit={e => { e.preventDefault(); doSearch(pillQ, pillLoc); }}
+              >
+                <div
+                  className={`nb__pill-sec${focSec === 'q' ? ' nb__pill-sec--focus' : ''}`}
+                  onClick={() => setFocSec('q')}
+                  style={{ position: 'relative' }}
+                >
+                  <div className="nb__pill-label">Search Businesses</div>
                   <input
-                    type="text"
-                    placeholder="Search businesses, services..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="nb__pill-input"
+                    placeholder="What are you looking for?"
+                    value={pillQ}
+                    onChange={e => { setPillQ(e.target.value); setShowSuggs(true); }}
+                    onFocus={() => { setFocSec('q'); setShowSuggs(true); }}
+                  />
+                  {showSuggs && filtSuggs.length > 0 && (
+                    <div className="nb__suggestions">
+                      <div className="nb__sugg-hd">Popular searches</div>
+                      {filtSuggs.map((s, i) => (
+                        <button key={i} type="button" className="nb__sugg-item"
+                          onClick={() => { setPillQ(s); setShowSuggs(false); doSearch(s, pillLoc); }}>
+                          <Search size={13} style={{ color: '#aaa', flexShrink: 0 }} /> {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="nb__pill-divider" />
+
+                <div
+                  className={`nb__pill-sec${focSec === 'loc' ? ' nb__pill-sec--focus' : ''}`}
+                  onClick={() => setFocSec('loc')}
+                >
+                  <div className="nb__pill-label">Location</div>
+                  <input
+                    className="nb__pill-input"
+                    placeholder="City, area..."
+                    value={pillLoc}
+                    onChange={e => setPillLoc(e.target.value)}
+                    onFocus={() => setFocSec('loc')}
                   />
                 </div>
-                <button type="submit" className="w-full bg-blue-600 text-white py-2.5 rounded-xl text-sm font-semibold">
-                  Search
+
+                <div className="nb__pill-divider" />
+
+                <div
+                  className={`nb__pill-sec${focSec === 'cat' ? ' nb__pill-sec--focus' : ''}`}
+                  onClick={() => setFocSec('cat')}
+                  style={{ minWidth: 150 }}
+                >
+                  <div className="nb__pill-label">Category</div>
+                  <select
+                    className="nb__pill-select"
+                    value={pillCat}
+                    onChange={e => setPillCat(e.target.value)}
+                    onFocus={() => setFocSec('cat')}
+                  >
+                    {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+
+                <button type="submit" className="nb__pill-btn" aria-label="Search">
+                  <Search size={20} color="#fff" />
                 </button>
               </form>
-            )}
+            </div>
+          )}
+        </div>
 
-            {/* Mobile Links */}
-            <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
-              <Link 
-                to="/apply" 
-                onClick={() => setMobileOpen(false)} 
-                className="w-full bg-blue-600 text-white text-center py-2.5 rounded-xl text-sm font-semibold"
-              >
-                List Business
-              </Link>
+        {/* Mobile drawer */}
+        {mobileOpen && (
+          <div className="nb__mobile-drawer">
+            <form
+              className="nb__mobile-search"
+              onSubmit={e => { e.preventDefault(); doSearch(mobileQ, mobileCity); }}
+            >
+              <input className="nb__mobile-input" placeholder="Search businesses..."
+                value={mobileQ} onChange={e => setMobileQ(e.target.value)} />
+              <input className="nb__mobile-input" placeholder="City or area"
+                value={mobileCity} onChange={e => setMobileCity(e.target.value)} />
+              <button type="submit" className="nb__mobile-sbtn">Search</button>
+            </form>
+            <div className="nb__mobile-links">
+              <Link to="/" className="nb__mobile-link nb__mobile-link--outline"
+                onClick={() => setMobileOpen(false)}>Home</Link>
+              <Link to="/search" className="nb__mobile-link nb__mobile-link--outline"
+                onClick={() => setMobileOpen(false)}>Categories</Link>
+              <Link to="/apply" className="nb__mobile-link nb__mobile-link--primary"
+                onClick={() => setMobileOpen(false)}>List Business</Link>
               {isLoggedIn ? (
                 <>
-                  <Link 
-                    to="/dashboard" 
-                    onClick={() => setMobileOpen(false)} 
-                    className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50"
-                  >
-                    My Dashboard
-                  </Link>
+                  <Link to="/dashboard" className="nb__mobile-link nb__mobile-link--outline"
+                    onClick={() => setMobileOpen(false)}>My Dashboard</Link>
                   {user?.role === 'admin' && (
-                    <Link 
-                      to="/admin/dashboard" 
-                      onClick={() => setMobileOpen(false)} 
-                      className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border border-blue-200 text-blue-600 hover:bg-blue-50"
-                    >
-                      Admin Panel
-                    </Link>
+                    <Link to="/admin/dashboard" className="nb__mobile-link nb__mobile-link--blue"
+                      onClick={() => setMobileOpen(false)}>Admin Panel</Link>
                   )}
-                  <button 
-                    onClick={() => {
-                      setMobileOpen(false);
-                      logout();
-                      toast.success('Logged out successfully');
-                      navigate('/login');
-                    }} 
-                    className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border border-red-200 text-red-500 hover:bg-red-50"
-                  >
+                  <button className="nb__mobile-link nb__mobile-link--danger"
+                    onClick={() => { setMobileOpen(false); logout(); toast.success('Logged out'); navigate('/'); }}>
                     Sign Out
                   </button>
                 </>
               ) : (
-                <Link 
-                  to="/login" 
-                  onClick={() => setMobileOpen(false)} 
-                  className="w-full flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50"
-                >
-                  <LogIn size={15} /> Sign In
-                </Link>
+                <>
+                  <Link to="/login" className="nb__mobile-link nb__mobile-link--outline"
+                    onClick={() => setMobileOpen(false)}>Log In</Link>
+                  <Link to="/signup" className="nb__mobile-link nb__mobile-link--primary"
+                    onClick={() => setMobileOpen(false)}>Sign Up</Link>
+                </>
               )}
             </div>
           </div>
-        </div>
-      )}
-    </nav>
+        )}
+      </nav>
+    </>
   );
-};
-
-export default Navbar;
+}
