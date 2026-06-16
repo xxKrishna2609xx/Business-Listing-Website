@@ -5,18 +5,23 @@ import {
   Dumbbell, ArrowRight, Star, BadgeCheck, Shield,
   Zap, Users, ChevronRight, Hotel, Key, Activity, HardHat, Dog,
   BedDouble, Smile, Coins, PartyPopper, Car, Truck, Send, Grid,
-  ShoppingBag, Apple, Milk, Droplet, WashingMachine, Plane, Train, Bus,
+  ShoppingBag, Apple, Milk, Pill, Droplet, WashingMachine, Plane, Train, Bus,
   GraduationCap, Heart, Sparkles, ChevronLeft, Locate
 } from 'lucide-react';
 import BusinessCard from '../../components/business/BusinessCard';
 import { BusinessCardSkeleton } from '../../components/common/Skeletons';
 import { categoryService } from '../../services/categoryService';
 import { businessService } from '../../services/businessService';
+import { metaService } from '../../services/metaService';
 
 const iconMap = {
   UtensilsCrossed, Hotel, Sparkles, Home, Heart, GraduationCap, Key,
   Activity, HardHat, Dog, BedDouble, Building2, Smile, Dumbbell, Coins,
   PartyPopper, Car, Truck, Send, Grid
+};
+
+const quickServiceIconMap = {
+  ShoppingBag, Apple, Milk, Pill, Droplet, WashingMachine, Plane, Bus, Train, Hotel, Car
 };
 
 /* ── Banner images (Unsplash CDN, free-to-use) ── */
@@ -71,15 +76,7 @@ async function detectLocation() {
   });
 }
 
-/* ── Pill component (reusable) ─────────────── */
-const Pill = ({ label }) => (
-  <span style={{
-    display: 'inline-block',
-    padding: '2px 10px', fontSize: 11, fontWeight: 700,
-    border: '1.5px solid #DDDDDD', borderRadius: 20, color: '#222',
-    background: '#fff',
-  }}>{label}</span>
-);
+
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,6 +89,15 @@ export default function HomePage() {
   const [bannerAnim, setBannerAnim] = useState('slide-in');
   const [categoriesList, setCategoriesList] = useState([]);
   const [businessesList, setBusinessesList] = useState([]);
+  const [bannersList, setBannersList] = useState([]);
+  const [quickServices, setQuickServices] = useState([]);
+  const [stats, setStats] = useState({
+    listingsCount: 0,
+    verifiedCount: 0,
+    categoriesCount: 0,
+    avgRating: '4.8★',
+    monthlyUsers: '10K+'
+  });
   const navigate = useNavigate();
   const searchRef = useRef(null);
   const bannerTimer = useRef(null);
@@ -100,12 +106,24 @@ export default function HomePage() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [cats, bizes] = await Promise.all([
+        const [cats, bizes, banners, services, publicStats] = await Promise.all([
           categoryService.getCategories(),
-          businessService.getBusinesses()
+          businessService.getBusinesses(),
+          metaService.getBanners(),
+          metaService.getQuickServices(),
+          metaService.getPublicStats()
         ]);
         setCategoriesList(cats || []);
         setBusinessesList(bizes || []);
+        setBannersList(banners || []);
+        setQuickServices(services || []);
+        setStats(publicStats || {
+          listingsCount: 0,
+          verifiedCount: 0,
+          categoriesCount: 0,
+          avgRating: '4.8★',
+          monthlyUsers: '10K+'
+        });
       } catch (err) {
         console.error('Failed to load home page data:', err);
       } finally {
@@ -117,19 +135,23 @@ export default function HomePage() {
 
   /* ── Auto-advance banner every 5s ── */
   const advanceBanner = (dir = 1) => {
+    if (bannersList.length <= 1) return;
     setBannerAnim('slide-out');
     setTimeout(() => {
-      setBannerIdx(i => (i + dir + BANNERS.length) % BANNERS.length);
+      setBannerIdx(i => (i + dir + bannersList.length) % bannersList.length);
       setBannerAnim('slide-in');
     }, 320);
   };
 
   useEffect(() => {
-    bannerTimer.current = setInterval(() => advanceBanner(1), 5000);
+    if (bannersList.length > 1) {
+      bannerTimer.current = setInterval(() => advanceBanner(1), 5000);
+    }
     return () => clearInterval(bannerTimer.current);
-  }, []);
+  }, [bannersList]);
 
   const goBanner = (dir) => {
+    if (bannersList.length <= 1) return;
     clearInterval(bannerTimer.current);
     advanceBanner(dir);
     bannerTimer.current = setInterval(() => advanceBanner(1), 5000);
@@ -157,7 +179,14 @@ export default function HomePage() {
     ? businessesList.filter(b => b.featured)
     : businessesList.slice().reverse().slice(0, 6);
 
-  const banner = BANNERS[bannerIdx];
+  const banner = bannersList[bannerIdx] || {
+    url: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1400&q=80',
+    title: 'Find Trusted Businesses Near You',
+    sub: 'Discover 700+ verified local businesses across India'
+  };
+
+  const dailyNeedsList = quickServices.filter(item => item.section === 'Daily Needs');
+  const travelBookingsList = quickServices.filter(item => item.section === 'Travel Bookings');
 
   return (
     <div className="min-h-screen" style={{ background: '#fff' }}>
@@ -192,7 +221,7 @@ export default function HomePage() {
 
         {/* Dots */}
         <div style={{ position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 7, zIndex: 10 }}>
-          {BANNERS.map((_, i) => (
+          {bannersList.map((_, i) => (
             <button key={i} onClick={() => { clearInterval(bannerTimer.current); setBannerIdx(i); bannerTimer.current = setInterval(() => advanceBanner(1), 5000); }} style={{
               width: i === bannerIdx ? 22 : 8, height: 8, borderRadius: 4,
               background: i === bannerIdx ? '#fff' : 'rgba(255,255,255,0.45)',
@@ -288,14 +317,14 @@ export default function HomePage() {
           {/* Trending tags */}
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20 }}>
             <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>Trending:</span>
-            {['Restaurants', 'Gyms', 'Hospitals', 'Beauty Spa', 'Education'].map(tag => (
-              <button key={tag} onClick={() => navigate(`/search?query=${encodeURIComponent(tag)}`)}
+            {categoriesList.slice(0, 5).map(cat => (
+              <button key={cat.id} onClick={() => navigate(`/search?category=${encodeURIComponent(cat.slug)}`)}
                 style={{
                   fontSize: 12, background: 'rgba(255,255,255,0.15)', color: '#fff',
                   border: '1px solid rgba(255,255,255,0.3)', padding: '5px 14px',
                   borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.2s',
                 }}>
-                {tag}
+                {cat.name}
               </button>
             ))}
           </div>
@@ -306,10 +335,10 @@ export default function HomePage() {
       <section style={{ background: '#1a56db', padding: '20px 24px' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px 60px' }}>
           {[
-            { icon: Building2, value: '700+',  label: 'Businesses'   },
-            { icon: BadgeCheck,value: '500+',  label: 'Verified'     },
-            { icon: Users,     value: '10K+',  label: 'Monthly Users'},
-            { icon: Star,      value: '4.8★',  label: 'Avg Rating'   },
+            { icon: Building2, value: `${stats.listingsCount}+`,  label: 'Businesses'   },
+            { icon: BadgeCheck,value: `${stats.verifiedCount}+`,  label: 'Verified'     },
+            { icon: Users,     value: stats.monthlyUsers,         label: 'Monthly Users'},
+            { icon: Star,      value: stats.avgRating,            label: 'Avg Rating'   },
           ].map(({ icon: Icon, value, label }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <Icon size={22} color="rgba(255,255,255,0.7)" />
@@ -404,15 +433,8 @@ export default function HomePage() {
 
               {/* Right Column */}
               <div className="w-full lg:w-3/4 grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-6 md:gap-x-4">
-                {[
-                  { name: 'Groceries', icon: ShoppingBag, iconColor: 'text-indigo-500 fill-indigo-50', query: 'Groceries' },
-                  { name: 'Fruits & Veg', icon: Apple, iconColor: 'text-emerald-500 fill-emerald-50', query: 'Vegetables' },
-                  { name: 'Milk & Dairy', icon: Milk, iconColor: 'text-blue-500 fill-blue-50', query: 'Dairy' },
-                  { name: 'Medicines', icon: Pill, iconColor: 'text-rose-500 fill-rose-50', query: 'Pharmacy' },
-                  { name: 'Water Supplier', icon: Droplet, iconColor: 'text-cyan-500 fill-cyan-50', query: 'Water' },
-                  { name: 'Laundry/Dry', icon: WashingMachine, iconColor: 'text-amber-500 fill-amber-50', query: 'Laundry' },
-                ].map((item, idx) => {
-                  const Icon = item.icon;
+                {dailyNeedsList.map((item, idx) => {
+                  const Icon = quickServiceIconMap[item.icon] || ShoppingBag;
                   return (
                     <Link
                       key={idx}
@@ -454,14 +476,8 @@ export default function HomePage() {
 
               {/* Right Column */}
               <div className="w-full lg:w-3/4 grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-6 md:gap-x-4">
-                {[
-                  { name: 'Flight', icon: Plane, iconColor: 'text-sky-500 fill-sky-50', subtext: 'Powered By\nEasemytrip.com', query: 'Flights' },
-                  { name: 'Bus', icon: Bus, iconColor: 'text-red-500 fill-red-50', subtext: 'Affordable Rides', query: 'Bus' },
-                  { name: 'Train', icon: Train, iconColor: 'text-indigo-600 fill-indigo-50', subtext: '', query: 'Train' },
-                  { name: 'Hotel', icon: Hotel, iconColor: 'text-emerald-500 fill-emerald-50', subtext: 'Budget-friendly\nStay', query: 'Hotels' },
-                  { name: 'Car Rentals', icon: Car, iconColor: 'text-blue-500 fill-blue-50', subtext: 'Drive Easy\nAnywhere', query: 'Car Rentals' },
-                ].map((item, idx) => {
-                  const Icon = item.icon;
+                {travelBookingsList.map((item, idx) => {
+                  const Icon = quickServiceIconMap[item.icon] || Plane;
                   return (
                     <Link
                       key={idx}
@@ -621,26 +637,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ══════════ FINAL CTA ══════════ */}
-      <section style={{ background: '#1a56db', padding: '64px 24px', textAlign: 'center' }}>
-        <h2 style={{ fontSize: 36, fontWeight: 900, color: '#fff', marginBottom: 12 }}>
-          Ready to List Your Business?
-        </h2>
-        <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: 32, fontSize: 16 }}>
-          Join 700+ verified businesses and start receiving leads today.
-        </p>
-        <Link to="/apply" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 10,
-          background: '#fff', color: '#1a56db', fontWeight: 800, fontSize: 16,
-          padding: '14px 36px', borderRadius: 14, textDecoration: 'none',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.2)', transition: 'transform 0.2s',
-        }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'none'}
-        >
-          List Your Business — It's Free <ArrowRight size={18} />
-        </Link>
-      </section>
 
       <style>{`
         @keyframes fadeUp  { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:none; } }

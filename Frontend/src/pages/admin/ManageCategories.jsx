@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Save, Tag } from 'lucide-react';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { categories as initialCategories, subcategories as initialSubs } from '../../data/mockData';
+import { categoryService } from '../../services/categoryService';
 import toast from 'react-hot-toast';
 
 const ManageCategories = () => {
-  const [cats, setCats] = useState(initialCategories);
-  const [subs, setSubs] = useState(initialSubs);
+  const [cats, setCats] = useState([]);
+  const [subs, setSubs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [catModal, setCatModal] = useState(null); // null | 'add' | category-object
   const [subModal, setSubModal] = useState(null);
   const [catForm, setCatForm] = useState({ name: '', icon: '', color: 'from-blue-500 to-indigo-600' });
@@ -19,43 +20,106 @@ const ManageCategories = () => {
     'from-cyan-500 to-blue-600', 'from-lime-500 to-green-600',
   ];
 
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [allCats, allSubs] = await Promise.all([
+        categoryService.getCategories(),
+        categoryService.getAllSubcategories()
+      ]);
+      setCats(allCats || []);
+      setSubs(allSubs || []);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to load categories data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
   const openAddCat = () => { setCatForm({ name: '', icon: 'Building2', color: 'from-blue-500 to-indigo-600' }); setCatModal('add'); };
   const openEditCat = (cat) => { setCatForm({ ...cat }); setCatModal(cat); };
   const openAddSub = () => { setSubForm({ name: '', categoryId: '' }); setSubModal('add'); };
 
-  const saveCat = () => {
+  const saveCat = async () => {
     if (!catForm.name) { toast.error('Category name is required'); return; }
-    if (catModal === 'add') {
-      const newCat = { ...catForm, id: `cat-${Date.now()}`, slug: catForm.name.toLowerCase().replace(/\s+/g, '-'), count: 0 };
-      setCats(prev => [...prev, newCat]);
-      toast.success('Category added');
-    } else {
-      setCats(prev => prev.map(c => c.id === catModal.id ? { ...c, ...catForm } : c));
-      toast.success('Category updated');
+    try {
+      if (catModal === 'add') {
+        const created = await categoryService.createCategory({
+          name: catForm.name,
+          icon: catForm.icon || 'Tag',
+          color: catForm.color
+        });
+        setCats(prev => [...prev, created]);
+        toast.success('Category added successfully');
+      } else {
+        const updated = await categoryService.updateCategory(catModal.id, {
+          name: catForm.name,
+          icon: catForm.icon || 'Tag',
+          color: catForm.color
+        });
+        setCats(prev => prev.map(c => c.id === catModal.id ? updated : c));
+        toast.success('Category updated successfully');
+      }
+      setCatModal(null);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to save category');
     }
-    setCatModal(null);
   };
 
-  const deleteCat = (id) => {
+  const deleteCat = async (id) => {
     if (window.confirm('Delete this category? All subcategories will also be removed.')) {
-      setCats(prev => prev.filter(c => c.id !== id));
-      setSubs(prev => prev.filter(s => s.categoryId !== id));
-      toast.success('Category deleted');
+      try {
+        await categoryService.deleteCategory(id);
+        setCats(prev => prev.filter(c => c.id !== id));
+        setSubs(prev => prev.filter(s => s.categoryId !== id));
+        toast.success('Category deleted successfully');
+      } catch (err) {
+        toast.error(err.response?.data?.detail || 'Failed to delete category');
+      }
     }
   };
 
-  const saveSub = () => {
+  const saveSub = async () => {
     if (!subForm.name || !subForm.categoryId) { toast.error('Fill all fields'); return; }
-    const newSub = { ...subForm, id: `sub-${Date.now()}`, slug: subForm.name.toLowerCase().replace(/\s+/g, '-') };
-    setSubs(prev => [...prev, newSub]);
-    toast.success('Subcategory added');
-    setSubModal(null);
+    try {
+      const created = await categoryService.createSubcategory({
+        name: subForm.name,
+        categoryId: subForm.categoryId
+      });
+      setSubs(prev => [...prev, created]);
+      toast.success('Subcategory added successfully');
+      setSubModal(null);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to add subcategory');
+    }
   };
 
-  const deleteSub = (id) => {
-    setSubs(prev => prev.filter(s => s.id !== id));
-    toast.success('Subcategory deleted');
+  const deleteSub = async (id) => {
+    if (window.confirm('Delete this subcategory?')) {
+      try {
+        await categoryService.deleteSubcategory(id);
+        setSubs(prev => prev.filter(s => s.id !== id));
+        toast.success('Subcategory deleted successfully');
+      } catch (err) {
+        toast.error(err.response?.data?.detail || 'Failed to delete subcategory');
+      }
+    }
   };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

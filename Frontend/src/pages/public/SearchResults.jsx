@@ -23,6 +23,13 @@ const SearchResults = () => {
     categoryService.getCategories().then(setCategories).catch(() => {});
   }, []);
 
+  // Sync state with URL search params when they change
+  useEffect(() => {
+    setQuery(searchParams.get('query') || '');
+    setCity(searchParams.get('city') || '');
+    setSelectedCategory(searchParams.get('category') || '');
+  }, [searchParams]);
+
   // Reset selected brand when query or category changes
   useEffect(() => {
     setSelectedBrand('');

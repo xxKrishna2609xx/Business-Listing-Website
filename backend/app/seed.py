@@ -216,6 +216,138 @@ LEADS = [
 ]
 
 
+BANNERS = [
+    {
+        "_id": "banner-1",
+        "url": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1400&q=80",
+        "title": "Find Trusted Businesses Near You",
+        "sub": "Discover 700+ verified local businesses across India"
+    },
+    {
+        "_id": "banner-2",
+        "url": "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1400&q=80",
+        "title": "Connect with Local Service Experts",
+        "sub": "From home repairs to healthcare — all in one place"
+    },
+    {
+        "_id": "banner-3",
+        "url": "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1400&q=80",
+        "title": "Grow Your Business with Right Ads",
+        "sub": "List your business free and reach thousands of customers"
+    },
+    {
+        "_id": "banner-4",
+        "url": "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1400&q=80",
+        "title": "India's Premier Business Directory",
+        "sub": "Restaurants, Hotels, Education, Health and more"
+    },
+    {
+        "_id": "banner-5",
+        "url": "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1400&q=80",
+        "title": "Real Reviews. Verified Listings.",
+        "sub": "Make informed decisions with genuine customer feedback"
+    }
+]
+
+QUICK_SERVICES = [
+    # Daily Needs
+    {
+        "_id": "qs-1",
+        "section": "Daily Needs",
+        "name": "Groceries",
+        "icon": "ShoppingBag",
+        "iconColor": "text-indigo-500 fill-indigo-50",
+        "query": "Groceries"
+    },
+    {
+        "_id": "qs-2",
+        "section": "Daily Needs",
+        "name": "Fruits & Veg",
+        "icon": "Apple",
+        "iconColor": "text-emerald-500 fill-emerald-50",
+        "query": "Vegetables"
+    },
+    {
+        "_id": "qs-3",
+        "section": "Daily Needs",
+        "name": "Milk & Dairy",
+        "icon": "Milk",
+        "iconColor": "text-blue-500 fill-blue-50",
+        "query": "Dairy"
+    },
+    {
+        "_id": "qs-4",
+        "section": "Daily Needs",
+        "name": "Medicines",
+        "icon": "Pill",
+        "iconColor": "text-rose-500 fill-rose-50",
+        "query": "Pharmacy"
+    },
+    {
+        "_id": "qs-5",
+        "section": "Daily Needs",
+        "name": "Water Supplier",
+        "icon": "Droplet",
+        "iconColor": "text-cyan-500 fill-cyan-50",
+        "query": "Water"
+    },
+    {
+        "_id": "qs-6",
+        "section": "Daily Needs",
+        "name": "Laundry/Dry",
+        "icon": "WashingMachine",
+        "iconColor": "text-amber-500 fill-amber-50",
+        "query": "Laundry"
+    },
+    # Travel Bookings
+    {
+        "_id": "qs-7",
+        "section": "Travel Bookings",
+        "name": "Flight",
+        "icon": "Plane",
+        "iconColor": "text-sky-500 fill-sky-50",
+        "subtext": "Powered By\nEasemytrip.com",
+        "query": "Flights"
+    },
+    {
+        "_id": "qs-8",
+        "section": "Travel Bookings",
+        "name": "Bus",
+        "icon": "Bus",
+        "iconColor": "text-red-500 fill-red-50",
+        "subtext": "Affordable Rides",
+        "query": "Bus"
+    },
+    {
+        "_id": "qs-9",
+        "section": "Travel Bookings",
+        "name": "Train",
+        "icon": "Train",
+        "iconColor": "text-indigo-600 fill-indigo-50",
+        "subtext": "",
+        "query": "Train"
+    },
+    {
+        "_id": "qs-10",
+        "section": "Travel Bookings",
+        "name": "Hotel",
+        "icon": "Hotel",
+        "iconColor": "text-emerald-500 fill-emerald-50",
+        "subtext": "Budget-friendly\nStay",
+        "query": "Hotels"
+    },
+    {
+        "_id": "qs-11",
+        "section": "Travel Bookings",
+        "name": "Car Rentals",
+        "icon": "Car",
+        "iconColor": "text-blue-500 fill-blue-50",
+        "subtext": "Drive Easy\nAnywhere",
+        "query": "Car Rentals"
+    }
+]
+
+
 # ─────────────────────────────────────────────────────────
 # Seeder function (called on FastAPI startup)
 # ─────────────────────────────────────────────────────────
@@ -258,5 +390,13 @@ async def seed_data(db) -> None:
     if await db.leads.count_documents({}) == 0:
         await db.leads.insert_many(LEADS)
         print(f"[SEED] {len(LEADS)} leads seeded.")
+
+    if await db.banners.count_documents({}) == 0:
+        await db.banners.insert_many(BANNERS)
+        print(f"[SEED] {len(BANNERS)} banners seeded.")
+
+    if await db.quick_services.count_documents({}) == 0:
+        await db.quick_services.insert_many(QUICK_SERVICES)
+        print(f"[SEED] {len(QUICK_SERVICES)} quick services seeded.")
 
     print("[SEED] Database seeding complete.")

@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import connect_db, close_db, get_db
-from .routers import auth, businesses, categories, applications, leads, admin
+from .routers import auth, businesses, categories, applications, leads, admin, banners, quick_services, public_stats
 
 
 @asynccontextmanager
@@ -52,12 +52,15 @@ app.add_middleware(
 # ─────────────────────────────────────────────────────────
 PREFIX = "/api/v1"
 
-app.include_router(auth.router,         prefix=PREFIX)
-app.include_router(businesses.router,   prefix=PREFIX)
-app.include_router(categories.router,   prefix=PREFIX)
-app.include_router(applications.router, prefix=PREFIX)
-app.include_router(leads.router,        prefix=PREFIX)
-app.include_router(admin.router,        prefix=PREFIX)
+app.include_router(auth.router,           prefix=PREFIX)
+app.include_router(businesses.router,     prefix=PREFIX)
+app.include_router(categories.router,     prefix=PREFIX)
+app.include_router(applications.router,   prefix=PREFIX)
+app.include_router(leads.router,          prefix=PREFIX)
+app.include_router(admin.router,          prefix=PREFIX)
+app.include_router(banners.router,        prefix=PREFIX)
+app.include_router(quick_services.router, prefix=PREFIX)
+app.include_router(public_stats.router,   prefix=PREFIX)
 
 
 @app.get("/")
