@@ -7,11 +7,15 @@ import {
 import { Facebook, Instagram, Linkedin, Twitter } from '../../components/common/SocialIcons';
 
 import LeadFormModal from '../../components/business/LeadFormModal';
+<<<<<<< HEAD
 import {
   getBusinessById,
   getReviews,
   createReview
 } from '../../services/api';
+=======
+import { businessService } from '../../services/businessService';
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -119,6 +123,7 @@ const BusinessDetails = () => {
     }
   };
   useEffect(() => {
+<<<<<<< HEAD
     const fetchBiz = async () => {
       setLoading(true);
       try {
@@ -133,6 +138,13 @@ const BusinessDetails = () => {
       }
     };
     fetchBiz();
+=======
+    setLoading(true);
+    businessService.getBusinessById(id)
+      .then(data => setBusiness(data))
+      .catch(() => setBusiness(null))
+      .finally(() => setLoading(false));
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
   }, [id]);
 
   if (loading) {

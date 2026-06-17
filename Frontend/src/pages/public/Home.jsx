@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
+<<<<<<< HEAD
   Search,
   MapPin,
   GraduationCap,
@@ -47,6 +48,20 @@ import BusinessCard from '../../components/business/BusinessCard';
 import { BusinessCardSkeleton } from '../../components/common/Skeletons';
 import { getCategories, getBusinesses } from '../../services/api';
 import toast from 'react-hot-toast';
+=======
+  Search, MapPin, Building2, UtensilsCrossed, Home,
+  Dumbbell, ArrowRight, Star, BadgeCheck, Shield,
+  Zap, Users, ChevronRight, Hotel, Key, Activity, HardHat, Dog,
+  BedDouble, Smile, Coins, PartyPopper, Car, Truck, Send, Grid,
+  ShoppingBag, Apple, Milk, Pill, Droplet, WashingMachine, Plane, Train, Bus,
+  GraduationCap, Heart, Sparkles, ChevronLeft, Locate
+} from 'lucide-react';
+import BusinessCard from '../../components/business/BusinessCard';
+import { BusinessCardSkeleton } from '../../components/common/Skeletons';
+import { categoryService } from '../../services/categoryService';
+import { businessService } from '../../services/businessService';
+import { metaService } from '../../services/metaService';
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 
 const iconMap = {
   UtensilsCrossed, Hotel, Sparkles, Home, Heart, GraduationCap, Key,
@@ -54,6 +69,7 @@ const iconMap = {
   PartyPopper, Car, Truck, Send, Grid
 };
 
+<<<<<<< HEAD
 const StatCard = ({ icon: Icon, value, label, color }) => (
   <div className="flex flex-col items-center text-center">
     <div className={`w-12 h-12 ${color} rounded-2xl flex items-center justify-center mb-3`}>
@@ -63,6 +79,12 @@ const StatCard = ({ icon: Icon, value, label, color }) => (
     <div className="text-blue-200 text-sm">{label}</div>
   </div>
 );
+=======
+const quickServiceIconMap = {
+  ShoppingBag, Apple, Milk, Pill, Droplet, WashingMachine, Plane, Bus, Train, Hotel, Car
+};
+
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 /* ── Banner images (Unsplash CDN, free-to-use) ── */
 const BANNERS = [
   {
@@ -91,11 +113,42 @@ const BANNERS = [
     sub: 'Make informed decisions with genuine customer feedback',
   },
 ];
+<<<<<<< HEAD
 const HomePage = () => {
+=======
+
+/* ── Location API via pincode ─────────────────── */
+async function detectLocation() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) { resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude: lat, longitude: lon } = pos.coords;
+          const res  = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
+          );
+          const data = await res.json();
+          const city    = data.address?.city || data.address?.town || data.address?.village || '';
+          const pincode = data.address?.postcode || '';
+          resolve({ city, pincode });
+        } catch { resolve(null); }
+      },
+      () => resolve(null),
+      { timeout: 6000 }
+    );
+  });
+}
+
+
+
+export default function HomePage() {
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
   const [searchQuery, setSearchQuery] = useState('');
   const [searchCity, setSearchCity] = useState('');
   const [pincode, setPincode] = useState('');
   const [locLoading, setLocLoading] = useState(false);
+<<<<<<< HEAD
   const [loadingPincode, setLoadingPincode] =useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -115,6 +168,26 @@ const HomePage = () => {
     'Mobile App Development', 'Branding', 'Cloud Services', 'UI/UX Design',
     'Content Writing', 'Digital Marketing', 'Logo Design', 'E-commerce',
   ];
+=======
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('featured');
+  const [bannerIdx, setBannerIdx] = useState(0);
+  const [bannerAnim, setBannerAnim] = useState('slide-in');
+  const [categoriesList, setCategoriesList] = useState([]);
+  const [businessesList, setBusinessesList] = useState([]);
+  const [bannersList, setBannersList] = useState([]);
+  const [quickServices, setQuickServices] = useState([]);
+  const [stats, setStats] = useState({
+    listingsCount: 0,
+    verifiedCount: 0,
+    categoriesCount: 0,
+    avgRating: '4.8★',
+    monthlyUsers: '10K+'
+  });
+  const navigate = useNavigate();
+  const searchRef = useRef(null);
+  const bannerTimer = useRef(null);
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 
   /* ── Auto-advance banner every 5s ── */
   const advanceBanner = (dir = 1) => {
@@ -126,6 +199,7 @@ const HomePage = () => {
   };
 
   useEffect(() => {
+<<<<<<< HEAD
     bannerTimer.current = setInterval(() => advanceBanner(1), 5000);
     return () => clearInterval(bannerTimer.current);
   }, []);
@@ -247,12 +321,39 @@ const HomePage = () => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setShowSuggestions(false);
+=======
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [cats, bizes, banners, services, publicStats] = await Promise.all([
+          categoryService.getCategories(),
+          businessService.getBusinesses(),
+          metaService.getBanners(),
+          metaService.getQuickServices(),
+          metaService.getPublicStats()
+        ]);
+        setCategoriesList(cats || []);
+        setBusinessesList(bizes || []);
+        setBannersList(banners || []);
+        setQuickServices(services || []);
+        setStats(publicStats || {
+          listingsCount: 0,
+          verifiedCount: 0,
+          categoriesCount: 0,
+          avgRating: '4.8★',
+          monthlyUsers: '10K+'
+        });
+      } catch (err) {
+        console.error('Failed to load home page data:', err);
+      } finally {
+        setLoading(false);
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    loadData();
   }, []);
 
+<<<<<<< HEAD
   useEffect(() => {
     const timer = setInterval(() => {
       setBannerIdx(prev =>
@@ -262,6 +363,42 @@ const HomePage = () => {
 
     return () => clearInterval(timer);
   }, []);
+=======
+  /* ── Auto-advance banner every 5s ── */
+  const advanceBanner = (dir = 1) => {
+    if (bannersList.length <= 1) return;
+    setBannerAnim('slide-out');
+    setTimeout(() => {
+      setBannerIdx(i => (i + dir + bannersList.length) % bannersList.length);
+      setBannerAnim('slide-in');
+    }, 320);
+  };
+
+  useEffect(() => {
+    if (bannersList.length > 1) {
+      bannerTimer.current = setInterval(() => advanceBanner(1), 5000);
+    }
+    return () => clearInterval(bannerTimer.current);
+  }, [bannersList]);
+
+  const goBanner = (dir) => {
+    if (bannersList.length <= 1) return;
+    clearInterval(bannerTimer.current);
+    advanceBanner(dir);
+    bannerTimer.current = setInterval(() => advanceBanner(1), 5000);
+  };
+
+  /* ── Detect location ── */
+  const handleDetectLocation = async () => {
+    setLocLoading(true);
+    const loc = await detectLocation();
+    if (loc) {
+      if (loc.city)    setSearchCity(loc.city);
+      if (loc.pincode) setPincode(loc.pincode);
+    }
+    setLocLoading(false);
+  };
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -335,12 +472,32 @@ const HomePage = () => {
     }
   };
 
+<<<<<<< HEAD
   const displayedBusinesses = activeTab === 'featured' ? businesses.filter(b => b.featured) : businesses.slice().reverse().slice(0, 4);
 
   return (
     <div className="min-h-screen">
 
       {/* ───────── HERO SECTION ───────── */}
+=======
+  const displayedBusinesses = activeTab === 'featured'
+    ? businessesList.filter(b => b.featured)
+    : businessesList.slice().reverse().slice(0, 6);
+
+  const banner = bannersList[bannerIdx] || {
+    url: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1400&q=80',
+    title: 'Find Trusted Businesses Near You',
+    sub: 'Discover 700+ verified local businesses across India'
+  };
+
+  const dailyNeedsList = quickServices.filter(item => item.section === 'Daily Needs');
+  const travelBookingsList = quickServices.filter(item => item.section === 'Travel Bookings');
+
+  return (
+    <div className="min-h-screen" style={{ background: '#fff' }}>
+
+      {/* ══════════ HERO WITH AUTO-SLIDER ══════════ */}
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
       <section style={{ position: 'relative', overflow: 'hidden', minHeight: 520 }}>
 
         {/* Background image */}
@@ -370,7 +527,11 @@ const HomePage = () => {
 
         {/* Dots */}
         <div style={{ position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 7, zIndex: 10 }}>
+<<<<<<< HEAD
           {BANNERS.map((_, i) => (
+=======
+          {bannersList.map((_, i) => (
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
             <button key={i} onClick={() => { clearInterval(bannerTimer.current); setBannerIdx(i); bannerTimer.current = setInterval(() => advanceBanner(1), 5000); }} style={{
               width: i === bannerIdx ? 22 : 8, height: 8, borderRadius: 4,
               background: i === bannerIdx ? '#fff' : 'rgba(255,255,255,0.45)',
@@ -430,13 +591,19 @@ const HomePage = () => {
                   type="text"
                   placeholder="Pincode"
                   value={pincode}
+<<<<<<< HEAD
                   onChange={(e) =>handlePincodeChange(e.target.value)}
                   style={{ width: 72, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', color: '#111', fontFamily: 'inherit' }}
 
+=======
+                  onChange={e => setPincode(e.target.value)}
+                  style={{ width: 72, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', color: '#111', fontFamily: 'inherit' }}
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
                 />
                 <button
                   type="button"
                   onClick={handleDetectLocation}
+<<<<<<< HEAD
                   disabled={locLoading}
                   title="Detect my location"
                   style={{width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #DDDDDD', background: '#fff', cursor: locLoading ? 'not-allowed' : 'pointer', opacity: locLoading ? 0.7 : 1,
@@ -449,6 +616,16 @@ const HomePage = () => {
                   }}
                 >
                   <Locate size={13} style={{animation: locLoading ? 'spin 1s linear infinite' : 'none'}}/>
+=======
+                  title="Detect my location"
+                  style={{
+                    width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #DDDDDD',
+                    background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: locLoading ? '#1a56db' : '#555', flexShrink: 0, transition: 'color 0.2s',
+                  }}
+                >
+                  <Locate size={13} style={{ animation: locLoading ? 'spin 1s linear infinite' : 'none' }} />
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
                 </button>
               </div>
               <button
@@ -460,6 +637,7 @@ const HomePage = () => {
                   transition: 'background 0.2s, transform 0.15s',
                   display: 'flex', alignItems: 'center', gap: 7,
                 }}
+<<<<<<< HEAD
 
                 onMouseEnter={e => e.currentTarget.style.background = '#1648c0'}
                 onMouseLeave={e => e.currentTarget.style.background = '#1a56db'}
@@ -505,57 +683,103 @@ const HomePage = () => {
               </div>
             </div>
           ))}
+=======
+                onMouseEnter={e => e.currentTarget.style.background = '#1648c0'}
+                onMouseLeave={e => e.currentTarget.style.background = '#1a56db'}
+              >
+                <Search size={16} /> Search
+              </button>
+            </div>
+          </form>
+
+          {/* Trending tags */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20 }}>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>Trending:</span>
+            {categoriesList.slice(0, 5).map(cat => (
+              <button key={cat.id} onClick={() => navigate(`/search?category=${encodeURIComponent(cat.slug)}`)}
+                style={{
+                  fontSize: 12, background: 'rgba(255,255,255,0.15)', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.3)', padding: '5px 14px',
+                  borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.2s',
+                }}>
+                {cat.name}
+              </button>
+            ))}
+          </div>
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
         </div>
       </section>
 
-      {/* ───────── CATEGORIES SECTION ───────── */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col items-center text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-semibold mb-3">
+      {/* ══════════ STATS STRIP ══════════ */}
+      <section style={{ background: '#1a56db', padding: '20px 24px' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px 60px' }}>
+          {[
+            { icon: Building2, value: `${stats.listingsCount}+`,  label: 'Businesses'   },
+            { icon: BadgeCheck,value: `${stats.verifiedCount}+`,  label: 'Verified'     },
+            { icon: Users,     value: stats.monthlyUsers,         label: 'Monthly Users'},
+            { icon: Star,      value: stats.avgRating,            label: 'Avg Rating'   },
+          ].map(({ icon: Icon, value, label }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Icon size={22} color="rgba(255,255,255,0.7)" />
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>{value}</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>{label}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ══════════ CATEGORIES GRID ══════════ */}
+      <section style={{ padding: '60px 24px', background: '#fff' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eff6ff', color: '#1a56db', padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, marginBottom: 12 }}>
               <Zap size={12} /> Browse By Category
             </div>
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">
-              Explore Popular <span className="gradient-text">Categories</span>
+            <h2 style={{ fontSize: 'clamp(24px,4vw,38px)', fontWeight: 900, color: '#111', margin: 0 }}>
+              Explore Popular Categories
             </h2>
-            <p className="text-slate-500 max-w-xl mx-auto text-sm">
-              Browse through our curated business categories to find the services you need.
-            </p>
           </div>
 
-          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-x-2 gap-y-6 md:gap-x-4">
-            {categories.map((cat, i) => {
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))', gap: '24px 16px' }}>
+            {categoriesList.map((cat, i) => {
               const Icon = iconMap[cat.icon] || Building2;
               return (
-                <Link
-                  key={cat.id}
-                  to={`/category/${cat.slug}`}
-                  className="group flex flex-col items-center w-full animate-fade-in"
-                  style={{ animationDelay: `${i * 0.05}s` }}
-                >
-                  <div className="w-16 h-16 md:w-20 md:h-20 bg-white border border-slate-150 hover:border-blue-400 rounded-2xl flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-blue-600/5 transition-all duration-200 group-hover:scale-105 cursor-pointer">
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center bg-slate-50 border border-slate-50 group-hover:bg-blue-50/50 group-hover:border-blue-100/30 transition-colors">
-                      <Icon size={22} className={`${cat.color.split(' ')[0]} group-hover:scale-110 transition-transform duration-200`} />
-                    </div>
+                <Link key={cat.id} to={`/category/${cat.slug}`}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textDecoration: 'none', animation: `fadeUp 0.4s ease ${i * 0.04}s both` }}>
+                  <div style={{
+                    width: 72, height: 72,
+                    border: '1.5px solid #EBEBEB', borderRadius: 18,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: '#fff', cursor: 'pointer', transition: 'all 0.2s',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(26,86,219,0.12)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#EBEBEB'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'; }}
+                  >
+                    <Icon size={28} style={{ color: '#1a56db' }} />
                   </div>
-                  <span className="text-[11px] md:text-xs font-bold text-slate-700 text-center mt-2 leading-tight group-hover:text-blue-600 transition-colors px-1 line-clamp-2">
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#333', textAlign: 'center', marginTop: 8, lineHeight: 1.3 }}>
                     {cat.name}
                   </span>
                 </Link>
               );
             })}
 
-            {/* Popular Categories (as the 20th category item) */}
-            <Link
-              to="/search"
-              className="group flex flex-col items-center w-full"
-            >
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-white border border-slate-150 hover:border-blue-400 rounded-2xl flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-blue-600/5 transition-all duration-200 group-hover:scale-105 cursor-pointer">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center bg-blue-600/10 border border-blue-100/20 group-hover:bg-blue-600 group-hover:border-blue-600 transition-colors">
-                  <Grid size={22} className="text-blue-600 group-hover:text-white transition-colors" />
-                </div>
+            {/* All categories tile */}
+            <Link to="/search" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textDecoration: 'none' }}>
+              <div style={{
+                width: 72, height: 72, border: '1.5px solid #1a56db', borderRadius: 18,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: '#eff6ff', cursor: 'pointer', transition: 'all 0.2s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#1a56db'; e.currentTarget.querySelector('svg').style.color = '#fff'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.querySelector('svg').style.color = '#1a56db'; }}
+              >
+                <Grid size={28} style={{ color: '#1a56db', transition: 'color 0.2s' }} />
               </div>
-              <span className="text-[11px] md:text-xs font-bold text-slate-700 text-center mt-2 leading-tight group-hover:text-blue-600 transition-colors px-1 line-clamp-2">
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#333', textAlign: 'center', marginTop: 8, lineHeight: 1.3 }}>
                 Popular Categories
               </span>
             </Link>
@@ -588,15 +812,8 @@ const HomePage = () => {
 
               {/* Right Column */}
               <div className="w-full lg:w-3/4 grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-6 md:gap-x-4">
-                {[
-                  { name: 'Groceries', icon: ShoppingBag, iconColor: 'text-indigo-500 fill-indigo-50', query: 'Groceries' },
-                  { name: 'Fruits & Veg', icon: Apple, iconColor: 'text-emerald-500 fill-emerald-50', query: 'Vegetables' },
-                  { name: 'Milk & Dairy', icon: Milk, iconColor: 'text-blue-500 fill-blue-50', query: 'Dairy' },
-                  { name: 'Medicines', icon: Pill, iconColor: 'text-rose-500 fill-rose-50', query: 'Pharmacy' },
-                  { name: 'Water Supplier', icon: Droplet, iconColor: 'text-cyan-500 fill-cyan-50', query: 'Water' },
-                  { name: 'Laundry/Dry', icon: WashingMachine, iconColor: 'text-amber-500 fill-amber-50', query: 'Laundry' },
-                ].map((item, idx) => {
-                  const Icon = item.icon;
+                {dailyNeedsList.map((item, idx) => {
+                  const Icon = quickServiceIconMap[item.icon] || ShoppingBag;
                   return (
                     <Link
                       key={idx}
@@ -638,14 +855,8 @@ const HomePage = () => {
 
               {/* Right Column */}
               <div className="w-full lg:w-3/4 grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-6 md:gap-x-4">
-                {[
-                  { name: 'Flight', icon: Plane, iconColor: 'text-sky-500 fill-sky-50', subtext: 'Powered By\nEasemytrip.com', query: 'Flights' },
-                  { name: 'Bus', icon: Bus, iconColor: 'text-red-500 fill-red-50', subtext: 'Affordable Rides', query: 'Bus' },
-                  { name: 'Train', icon: Train, iconColor: 'text-indigo-600 fill-indigo-50', subtext: '', query: 'Train' },
-                  { name: 'Hotel', icon: Hotel, iconColor: 'text-emerald-500 fill-emerald-50', subtext: 'Budget-friendly\nStay', query: 'Hotels' },
-                  { name: 'Car Rentals', icon: Car, iconColor: 'text-blue-500 fill-blue-50', subtext: 'Drive Easy\nAnywhere', query: 'Car Rentals' },
-                ].map((item, idx) => {
-                  const Icon = item.icon;
+                {travelBookingsList.map((item, idx) => {
+                  const Icon = quickServiceIconMap[item.icon] || Plane;
                   return (
                     <Link
                       key={idx}
@@ -673,53 +884,51 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ───────── FEATURED / LATEST BUSINESSES ───────── */}
-      <section className="py-16 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      {/* ══════════ FEATURED BUSINESSES ══════════ */}
+      <section style={{ padding: '60px 24px', background: '#f8faff' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 32 }}>
             <div>
-              <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-semibold mb-2">
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eff6ff', color: '#1a56db', padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, marginBottom: 10 }}>
                 <Sparkles size={12} /> Top Picks
               </div>
-              <h2 className="text-3xl font-black text-slate-900">
-                Discover <span className="gradient-text">Businesses</span>
-              </h2>
+              <h2 style={{ fontSize: 32, fontWeight: 900, color: '#111', margin: 0 }}>Discover Businesses</h2>
             </div>
-
-            {/* Tabs */}
-            <div className="flex bg-white border border-slate-200 rounded-xl p-1 gap-1">
-              {[
-                { key: 'featured', label: '⭐ Featured' },
-                { key: 'latest', label: '🕐 Latest' },
-              ].map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                    activeTab === tab.key
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  {tab.label}
-                </button>
+            <div style={{ display: 'flex', background: '#fff', border: '1.5px solid #EBEBEB', borderRadius: 14, padding: 4, gap: 4 }}>
+              {[{ key: 'featured', label: 'Featured' }, { key: 'latest', label: 'Latest' }].map(tab => (
+                <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+                  padding: '7px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  background: activeTab === tab.key ? '#1a56db' : 'transparent',
+                  color: activeTab === tab.key ? '#fff' : '#717171',
+                  transition: 'all 0.2s',
+                }}>{tab.label}</button>
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
             {loading
               ? Array.from({ length: 6 }).map((_, i) => <BusinessCardSkeleton key={i} />)
+<<<<<<< HEAD
               : displayedBusinesses.map(biz => (
                   <BusinessCard key={biz._id} business={biz} featured={biz.featured} />
                 ))
+=======
+              : displayedBusinesses.map(biz => <BusinessCard key={biz.id} business={biz} featured={biz.featured} />)
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
             }
           </div>
 
-          <div className="text-center mt-8">
-            <Link
-              to="/search"
-              className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:border-blue-400 text-slate-700 hover:text-blue-600 px-8 py-3 rounded-xl font-semibold text-sm transition-all duration-200 hover:shadow-lg"
+          <div style={{ textAlign: 'center', marginTop: 36 }}>
+            <Link to="/search" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '12px 28px', border: '1.5px solid #DDDDDD', borderRadius: 14,
+              color: '#333', fontWeight: 600, fontSize: 14, textDecoration: 'none',
+              background: '#fff', transition: 'border-color 0.2s, color 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.color = '#1a56db'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#DDDDDD'; e.currentTarget.style.color = '#333'; }}
             >
               View All Businesses <ArrowRight size={16} />
             </Link>
@@ -727,134 +936,99 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ───────── HOW IT WORKS ───────── */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-teal-50 text-teal-600 px-3 py-1 rounded-full text-xs font-semibold mb-3">
-              <TrendingUp size={12} /> Simple Process
-            </div>
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">
-              How It <span className="gradient-text">Works</span>
-            </h2>
+      {/* ══════════ HOW IT WORKS ══════════ */}
+      <section style={{ padding: '60px 24px', background: '#fff' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <h2 style={{ fontSize: 34, fontWeight: 900, color: '#111' }}>How It Works</h2>
+            <p style={{ color: '#717171', marginTop: 8 }}>Get started in three simple steps</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {/* Connection line */}
-            <div className="hidden md:block absolute top-16 left-1/3 right-1/3 h-0.5 bg-gradient-to-r from-blue-200 via-teal-200 to-blue-200" />
-
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 32 }}>
             {[
-              {
-                step: '01', icon: Search, title: 'Search & Discover',
-                desc: 'Search for any service or business by name, category, or city. Browse through 700+ verified businesses.',
-                color: 'bg-blue-600',
-              },
-              {
-                step: '02', icon: BadgeCheck, title: 'Compare & Choose',
-                desc: 'Read reviews, compare ratings, view business profiles, and contact directly or request a quote.',
-                color: 'bg-teal-600',
-              },
-              {
-                step: '03', icon: TrendingUp, title: 'Connect & Grow',
-                desc: 'Get in touch via phone, WhatsApp, or quote form. Businesses respond within 24 hours.',
-                color: 'bg-indigo-600',
-              },
+              { step: '01', icon: Search,    title: 'Search & Discover',  desc: 'Search for any service or business by name, category, or city.', color: '#1a56db' },
+              { step: '02', icon: BadgeCheck,title: 'Compare & Choose',   desc: 'Read reviews, compare ratings, view business profiles.', color: '#06b6d4' },
+              { step: '03', icon: Zap,       title: 'Connect & Grow',     desc: 'Get in touch via phone, WhatsApp, or quote form within 24 hours.', color: '#1a56db' },
             ].map(({ step, icon: Icon, title, desc, color }) => (
-              <div key={step} className="text-center group">
-                <div className={`w-16 h-16 ${color} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon size={28} className="text-white" />
+              <div key={step} style={{ textAlign: 'center' }}>
+                <div style={{
+                  width: 64, height: 64, borderRadius: 18, background: color,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 16px', boxShadow: `0 8px 24px ${color}33`,
+                  transition: 'transform 0.2s',
+                }}>
+                  <Icon size={28} color="#fff" />
                 </div>
-                <div className="text-xs font-bold text-slate-400 mb-2">STEP {step}</div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed max-w-xs mx-auto">{desc}</p>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', marginBottom: 6 }}>STEP {step}</div>
+                <h3 style={{ fontSize: 17, fontWeight: 800, color: '#111', marginBottom: 8 }}>{title}</h3>
+                <p style={{ fontSize: 14, color: '#717171', lineHeight: 1.6, maxWidth: 260, margin: '0 auto' }}>{desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ───────── WHY CHOOSE US ───────── */}
-      <section className="py-16 bg-gradient-to-br from-blue-50 to-teal-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mb-4">
-                <Shield size={12} /> Why Choose Us
-              </div>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-5">
-                Trusted by Thousands of{' '}
-                <span className="gradient-text">Businesses & Customers</span>
-              </h2>
-              <p className="text-slate-500 mb-8 leading-relaxed">
-                Right Ads Digital is India's most trusted business directory with a rigorous verification process, real reviews, and a powerful lead-generation system.
-              </p>
-              <div className="space-y-4">
-                {[
-                  { icon: BadgeCheck, title: 'Verified Businesses', desc: 'Every listed business is manually reviewed and verified.', color: 'text-teal-600 bg-teal-50' },
-                  { icon: Shield, title: 'Secure & Reliable', desc: 'Your data is protected with enterprise-grade security.', color: 'text-blue-600 bg-blue-50' },
-                  { icon: Zap, title: 'Instant Lead Connection', desc: 'Connect directly with businesses via WhatsApp or quote forms.', color: 'text-indigo-600 bg-indigo-50' },
-                ].map(({ icon: Icon, title, desc, color }) => (
-                  <div key={title} className="flex items-start gap-4">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
-                      <Icon size={18} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{title}</h4>
-                      <p className="text-slate-500 text-sm">{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-8 flex gap-3">
-                <Link to="/apply" className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20">
-                  List Your Business
-                </Link>
-                <Link to="/search" className="border border-slate-200 text-slate-700 px-6 py-3 rounded-xl font-semibold text-sm hover:border-blue-400 hover:text-blue-600 transition-colors">
-                  Browse Directory
-                </Link>
-              </div>
+      {/* ══════════ WHY US ══════════ */}
+      <section style={{ padding: '60px 24px', background: '#f0f6ff' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 40, alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#dbeafe', color: '#1a56db', padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, marginBottom: 16 }}>
+              <Shield size={12} /> Why Choose Us
             </div>
-
-            {/* Right side cards */}
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { value: '700+', label: 'Verified Listings', icon: Building2, color: 'from-blue-500 to-indigo-600' },
-                { value: '10K+', label: 'Monthly Visitors', icon: Users, color: 'from-teal-500 to-emerald-600' },
-                { value: '8+', label: 'Categories', icon: Zap, color: 'from-violet-500 to-purple-600' },
-                { value: '4.8★', label: 'Average Rating', icon: Star, color: 'from-amber-500 to-orange-600' },
-              ].map(({ value, label, icon: Icon, color }) => (
-                <div key={label} className={`bg-gradient-to-br ${color} p-6 rounded-2xl flex flex-col items-center text-center shadow-lg`}>
-                  <Icon size={28} className="text-white/80 mb-2" />
-                  <div className="text-3xl font-black text-white">{value}</div>
-                  <div className="text-white/80 text-xs mt-1">{label}</div>
+            <h2 style={{ fontSize: 32, fontWeight: 900, color: '#111', lineHeight: 1.2, marginBottom: 16 }}>
+              Trusted by Thousands of Businesses & Customers
+            </h2>
+            <p style={{ color: '#717171', lineHeight: 1.7, marginBottom: 28 }}>
+              Right Ads Digital is India's most trusted business directory with a rigorous verification process, real reviews, and a powerful lead-generation system.
+            </p>
+            {[
+              { icon: BadgeCheck, title: 'Verified Businesses', desc: 'Every listing is manually reviewed and verified.', color: '#06b6d4' },
+              { icon: Shield,     title: 'Secure & Reliable',   desc: 'Your data is protected with enterprise-grade security.', color: '#1a56db' },
+              { icon: Zap,        title: 'Instant Connection',  desc: 'Connect directly via WhatsApp or quote forms.', color: '#1a56db' },
+            ].map(({ icon: Icon, title, desc, color }) => (
+              <div key={title} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 20 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={18} style={{ color }} />
                 </div>
-              ))}
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>{title}</div>
+                  <div style={{ fontSize: 13, color: '#717171' }}>{desc}</div>
+                </div>
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+              <Link to="/apply" style={{ background: '#1a56db', color: '#fff', padding: '12px 24px', borderRadius: 12, fontWeight: 700, fontSize: 14, textDecoration: 'none', transition: 'background 0.2s' }}>
+                List Your Business
+              </Link>
+              <Link to="/search" style={{ border: '1.5px solid #DDDDDD', color: '#333', padding: '12px 24px', borderRadius: 12, fontWeight: 600, fontSize: 14, textDecoration: 'none', transition: 'border-color 0.2s' }}>
+                Browse Directory
+              </Link>
             </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            {[
+              { value: '700+', label: 'Verified Listings', icon: Building2, bg: 'linear-gradient(135deg,#1a56db,#1e40af)' },
+              { value: '10K+', label: 'Monthly Visitors',  icon: Users,     bg: 'linear-gradient(135deg,#06b6d4,#0891b2)' },
+              { value: '19+',  label: 'Categories',        icon: Zap,       bg: 'linear-gradient(135deg,#1a56db,#7c3aed)' },
+              { value: '4.8★', label: 'Average Rating',    icon: Star,      bg: 'linear-gradient(135deg,#1a56db,#0891b2)' },
+            ].map(({ value, label, icon: Icon, bg }) => (
+              <div key={label} style={{ background: bg, borderRadius: 20, padding: '28px 20px', textAlign: 'center', boxShadow: '0 4px 20px rgba(26,86,219,0.2)' }}>
+                <Icon size={26} color="rgba(255,255,255,0.7)" style={{ marginBottom: 8 }} />
+                <div style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>{value}</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4 }}>{label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
 
-
-      {/* ───────── FINAL CTA ───────── */}
-      <section className="py-16 hero-gradient">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col items-center text-center">
-          <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
-            Ready to List Your Business?
-          </h2>
-          <p className="text-blue-100 mb-8 max-w-xl">
-            Join 700+ verified businesses on Right Ads Digital and start receiving leads from thousands of potential customers today.
-          </p>
-          <Link
-            to="/apply"
-            className="inline-flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-slate-900 px-8 py-4 rounded-xl font-bold text-base transition-all duration-200 shadow-xl shadow-yellow-400/20 hover:scale-105"
-          >
-            List Your Business — It's Free <ArrowRight size={18} />
-          </Link>
-        </div>
-      </section>
+      <style>{`
+        @keyframes fadeUp  { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:none; } }
+        @keyframes slide-in { from { opacity:0; transform:scale(1.04); } to { opacity:1; transform:none; } }
+        @keyframes slide-out{ from { opacity:1; } to { opacity:0; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
-};
-
-export default HomePage;
+}

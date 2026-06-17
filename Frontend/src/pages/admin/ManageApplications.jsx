@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { Eye, CheckCircle, XCircle, Trash2, Search, Filter } from 'lucide-react';
 import AdminLayout from '../../components/layout/AdminLayout';
 
+=======
+import { Eye, CheckCircle, XCircle, Trash2, Search } from 'lucide-react';
+import AdminLayout from '../../components/layout/AdminLayout';
+import { adminService } from '../../services/adminService';
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 import toast from 'react-hot-toast';
 import {
   getApplications,
@@ -12,6 +18,10 @@ import {
 
 const ManageApplications = () => {
   const [apps, setApps] = useState([]);
+<<<<<<< HEAD
+=======
+  const [loading, setLoading] = useState(true);
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [viewModal, setViewModal] = useState(null);
@@ -42,6 +52,13 @@ const ManageApplications = () => {
 
   }, []);
 
+  useEffect(() => {
+    adminService.getApplications()
+      .then(setApps)
+      .catch(() => toast.error('Failed to load applications.'))
+      .finally(() => setLoading(false));
+  }, []);
+
   const filtered = apps.filter(a => {
     const matchSearch = a.businessName.toLowerCase().includes(search.toLowerCase()) ||
       a.ownerName.toLowerCase().includes(search.toLowerCase());
@@ -50,6 +67,7 @@ const ManageApplications = () => {
   });
 
   const handleApprove = async (id) => {
+<<<<<<< HEAD
 
     try {
 
@@ -72,10 +90,20 @@ const ManageApplications = () => {
       toast.error(
         'Approval failed'
       );
+=======
+    try {
+      const updated = await adminService.updateApplication(id, 'APPROVED');
+      setApps(prev => prev.map(a => a.id === id ? updated : a));
+      toast.success('Application approved! Business is now live.');
+      setViewModal(null);
+    } catch {
+      toast.error('Failed to approve application.');
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
     }
   };
 
   const handleReject = async (id) => {
+<<<<<<< HEAD
 
     try {
 
@@ -129,6 +157,24 @@ const ManageApplications = () => {
       console.error(err);
 
       toast.error('Delete failed');
+=======
+    try {
+      const updated = await adminService.updateApplication(id, 'REJECTED');
+      setApps(prev => prev.map(a => a.id === id ? { ...updated, notes: rejectReason } : a));
+      toast.error('Application rejected.');
+      setRejectModal(null);
+      setRejectReason('');
+      setViewModal(null);
+    } catch {
+      toast.error('Failed to reject application.');
+    }
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('Are you sure you want to delete this application?')) {
+      setApps(prev => prev.filter(a => a.id !== id));
+      toast.success('Application removed from view.');
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
     }
   };
 
@@ -196,13 +242,20 @@ const ManageApplications = () => {
                 </tr>
               ) : (
                 filtered.map(app => {
+<<<<<<< HEAD
                   
+=======
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
                   return (
                     <tr key={app._id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 font-semibold text-slate-800">{app.businessName}</td>
                       <td className="px-4 py-3 text-slate-600">{app.ownerName}</td>
                       <td className="px-4 py-3 text-slate-500 text-xs">{app.email}</td>
+<<<<<<< HEAD
                       <td className="px-4 py-3 text-slate-500 text-xs">{app.categoryName}</td>
+=======
+                      <td className="px-4 py-3 text-slate-500 text-xs">{app.categoryId}</td>
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
                       <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">
                         {new Date(app.createdAt).toLocaleDateString()}
                       </td>

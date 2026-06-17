@@ -1,3 +1,4 @@
+<<<<<<< HEAD
   import { useState, useEffect } from 'react';
   import { useNavigate, Link } from 'react-router-dom';
   import { User, Heart, Send, Calendar, Phone, Mail, Edit3, Trash2, LogOut, Building2, ExternalLink } from 'lucide-react';
@@ -11,8 +12,19 @@
     getBusinesses,
     getMyBusinessLeads
   } from '../../services/api';
+=======
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { User, Heart, Send, Calendar, Phone, Mail, Edit3, Trash2, LogOut, Building2, ExternalLink } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { businessService } from '../../services/businessService';
+import { leadService } from '../../services/leadService';
+import BusinessCard from '../../components/business/BusinessCard';
+import toast from 'react-hot-toast';
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 
 
+<<<<<<< HEAD
   const UserDashboard = () => {
     const { user, logout, toggleBookmark } = useAuth();
     const navigate = useNavigate();
@@ -23,18 +35,45 @@
     const [name, setName] = useState(user?.name || '');
     const [phone, setPhone] = useState(user?.phone || '');
     const [isEditing, setIsEditing] = useState(false);
+=======
+  // Leads state
+  const [myLeads, setMyLeads] = useState([]);
+  const [bookmarkedBusinesses, setBookmarkedBusinesses] = useState([]);
+  const [profileSaving, setProfileSaving] = useState(false);
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 
     // Leads state
     const [myLeads, setMyLeads] = useState([]);
     const [receivedLeads, setReceivedLeads] = useState([]);
 
+<<<<<<< HEAD
     useEffect(() => {
       const loadleads = async ()=> {
+=======
+      // Load user's leads from backend
+      leadService.getMyLeads().then(setMyLeads).catch(() => {});
+
+      // Load bookmarked businesses from backend
+      const bookmarkIds = user.bookmarks || [];
+      if (bookmarkIds.length > 0) {
+        Promise.allSettled(
+          bookmarkIds.map(id => businessService.getBusinessById(id))
+        ).then(results => {
+          const loaded = results
+            .filter(r => r.status === 'fulfilled')
+            .map(r => r.value);
+          setBookmarkedBusinesses(loaded);
+        });
+      }
+    }
+  }, [user]);
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 
         if (user) {
           setName(user.name);
           setPhone(user.phone);
 
+<<<<<<< HEAD
           // Load leads submitted by this user from local storage
           const leads = await getUserLeads(user.email);
 
@@ -50,6 +89,28 @@
         if (!user?.email) return;
         
         try {
+=======
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    if (!name || !phone) {
+      toast.error('Name and Phone are required.');
+      return;
+    }
+    setProfileSaving(true);
+    // Profile update via API not yet implemented — show informational toast
+    toast.success('Profile update saved locally. Backend profile edit endpoint coming soon!');
+    setIsEditing(false);
+    setProfileSaving(false);
+  };
+
+  // Get bookmarked businesses
+  const bookmarkedIds = user?.bookmarks || [];
+
+  return (
+    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
           
           const data =
           await getUserApplications(

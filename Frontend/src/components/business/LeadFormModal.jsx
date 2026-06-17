@@ -3,7 +3,11 @@ import { X, Send, User, Phone, Mail, MessageSquare, Briefcase, CheckCircle } fro
 import toast from 'react-hot-toast';
 import { createLead } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+<<<<<<< HEAD
 import { useNavigate } from 'react-router-dom';
+=======
+import { leadService } from '../../services/leadService';
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 
 const LeadFormModal = ({ business, isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -50,6 +54,7 @@ const LeadFormModal = ({ business, isOpen, onClose }) => {
     setLoading(true);
 
     try {
+<<<<<<< HEAD
       await createLead({
         businessId: business?.id,
         businessName: business?.businessName,
@@ -77,6 +82,23 @@ const LeadFormModal = ({ business, isOpen, onClose }) => {
       toast.error('Failed to send request');
     }
     finally {
+=======
+      await leadService.submitLead({
+        businessId: business?.id,
+        businessName: business?.businessName,
+        customerName: form.name,
+        phone: form.phone.replace(/\D/g, ''),
+        email: form.email,
+        serviceRequired: form.serviceRequired || 'General Consultation',
+        message: form.message,
+      });
+      setSubmitted(true);
+      toast.success('Quote request sent successfully!');
+    } catch (err) {
+      const msg = err?.response?.data?.detail || 'Failed to send request. Please try again.';
+      toast.error(msg);
+    } finally {
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
       setLoading(false);
     }
   };

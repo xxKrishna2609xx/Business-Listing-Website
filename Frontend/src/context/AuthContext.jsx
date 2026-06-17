@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+<<<<<<< HEAD
 import {
   registerUser,
   loginUserApi
@@ -9,6 +10,9 @@ import {
   removeBookmark,
   getBookmarks
 } from '../services/api';
+=======
+import { authService } from '../services/authService';
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 
 const AuthContext = createContext(null);
 
@@ -16,15 +20,29 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // On mount: validate any stored JWT and hydrate user state
   useEffect(() => {
-    // Check localStorage for persisted session
-    const savedUser = localStorage.getItem('auth_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    authService
+      .getMe()
+      .then((userData) => {
+        setUser(userData);
+        localStorage.setItem('auth_user', JSON.stringify(userData));
+      })
+      .catch(() => {
+        // Token invalid / expired — clear storage
+        authService.logout();
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
+<<<<<<< HEAD
   // Regular user/owner login
   const loginUser = async (email, password) => {
 
@@ -132,6 +150,37 @@ export const AuthProvider = ({ children }) => {
           updatedBookmarks
       };
 
+=======
+  /** Login with email + password. Works for both regular users and admin. */
+  const loginUser = async (email, password) => {
+    const userData = await authService.login(email, password);
+    setUser(userData);
+    localStorage.setItem('auth_user', JSON.stringify(userData));
+    return userData;
+  };
+
+  /** Alias used by AdminLogin page. */
+  const loginAdmin = loginUser;
+
+  /** Register a new user account. */
+  const signupUser = async (name, email, phone, password) => {
+    const userData = await authService.signup(name, email, phone, password);
+    setUser(userData);
+    localStorage.setItem('auth_user', JSON.stringify(userData));
+    return userData;
+  };
+
+  /**
+   * Toggle bookmark for a business.
+   * Calls the backend and updates local state with the new bookmarks list.
+   */
+  const toggleBookmark = async (businessId) => {
+    if (!user || user.role === 'admin') return false;
+
+    try {
+      const newBookmarks = await authService.toggleBookmark(businessId);
+      const updatedUser = { ...user, bookmarks: newBookmarks };
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
       setUser(updatedUser);
 
       localStorage.setItem(
@@ -140,11 +189,15 @@ export const AuthProvider = ({ children }) => {
       );
 
       return true;
+<<<<<<< HEAD
 
     } catch (err) {
 
       console.error(err);
 
+=======
+    } catch {
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
       return false;
     }
   };
@@ -162,6 +215,7 @@ export const AuthProvider = ({ children }) => {
     };
 
   const logout = () => {
+<<<<<<< HEAD
 
     setUser(null);
 
@@ -190,6 +244,26 @@ export const AuthProvider = ({ children }) => {
       isAdmin: user?.role === 'admin',
       isLoggedIn: !!user
     }}>
+=======
+    authService.logout();
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        loginUser,
+        loginAdmin,
+        signupUser,
+        toggleBookmark,
+        logout,
+        isAdmin: user?.role === 'admin',
+        isLoggedIn: !!user,
+      }}
+    >
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
       {children}
     </AuthContext.Provider>
   );

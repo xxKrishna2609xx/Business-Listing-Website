@@ -5,7 +5,13 @@ import {
   Upload, CheckCircle, ChevronRight, Sparkles, AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+<<<<<<< HEAD
 import {getCategories, getSubcategories, submitBusiness } from '../../services/api';
+=======
+import { categoryService } from '../../services/categoryService';
+import { adminService } from '../../services/adminService';
+
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 const steps = ['Business Info', 'Location', 'Media & Socials', 'Review'];
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -24,6 +30,7 @@ const ApplyListing = () => {
   });
   const [errors, setErrors] = useState({});
 
+<<<<<<< HEAD
  const filteredSubs =subcategories?.filter(s => s.categoryId === form.categoryId) || [];
 
   useEffect(() => {
@@ -55,6 +62,22 @@ const ApplyListing = () => {
 
   }, []);
 
+=======
+  useEffect(() => {
+    categoryService.getCategories().then(setCategories).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (form.categoryId) {
+      const cat = categories.find(c => c.id === form.categoryId);
+      if (cat) {
+        categoryService.getSubcategories(cat.slug).then(setSubcategories).catch(() => {});
+      }
+    } else {
+      setSubcategories([]);
+    }
+  }, [form.categoryId, categories]);
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 
   const handleChange = (e) => {
 
@@ -139,6 +162,7 @@ const ApplyListing = () => {
   const handleSubmit = async () => {
 
     setLoading(true);
+<<<<<<< HEAD
 
     try {
       const selectedCategory = categories.find(
@@ -200,6 +224,30 @@ const ApplyListing = () => {
 
       setLoading(false);
 
+=======
+    try {
+      await adminService.submitApplication({
+        businessName: form.businessName,
+        ownerName: form.ownerName,
+        email: form.email,
+        phone: form.phone,
+        categoryId: form.categoryId,
+        subcategoryId: form.subcategoryId || '',
+        address: form.address,
+        city: form.city,
+        state: form.state,
+        website: form.website || '',
+        description: form.description,
+        services: [],
+      });
+      setSubmitted(true);
+      toast.success('Application submitted successfully!');
+    } catch (err) {
+      const msg = err?.response?.data?.detail || 'Submission failed. Please try again.';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
     }
   };
 
@@ -339,11 +387,11 @@ const ApplyListing = () => {
                     name="subcategoryId"
                     value={form.subcategoryId}
                     onChange={handleChange}
-                    disabled={!form.categoryId || filteredSubs.length === 0}
+                    disabled={!form.categoryId || subcategories.length === 0}
                     className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-slate-50 disabled:text-slate-400"
                   >
                     <option value="">Select Subcategory</option>
-                    {filteredSubs.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    {subcategories.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </div>
               </div>

@@ -21,7 +21,10 @@ const NAV_TABS = [
   { label: 'Services',   to: '/search?query=services',    match: (p) => false               }, // never auto-active
 ];
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 export default function Navbar() {
   const { user, isLoggedIn, logout } = useAuth();
   const navigate  = useNavigate();
@@ -52,10 +55,13 @@ export default function Navbar() {
   const pillRef = useRef(null);
   const ddRef   = useRef(null);
 
+<<<<<<< HEAD
   
 
 
 
+=======
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
   // BUG 1 FIX: only track scroll for compact/expanded toggle — no hide behavior
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -77,6 +83,7 @@ export default function Navbar() {
 
   useEffect(() => setMobileOpen(false), [pathname]);
 
+<<<<<<< HEAD
   const doSearch = (
     q = '',
     city = '',
@@ -115,6 +122,12 @@ export default function Navbar() {
 
     setShowSuggs(false);
     setMobileOpen(false);
+=======
+  const doSearch = (q, city = '') => {
+    if (!q.trim()) return;
+    navigate(`/search?query=${encodeURIComponent(q.trim())}&city=${encodeURIComponent(city)}`);
+    setShowSuggs(false); setMobileOpen(false);
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
   };
 
   const avatar = user?.name
@@ -165,6 +178,7 @@ export default function Navbar() {
             <div className={`nb__compact ${showCompact ? 'nb__compact--visible' : 'nb__compact--hidden'}`}>
               <form
                 className="nb__compact-pill"
+<<<<<<< HEAD
                 onSubmit={e => {
                   e.preventDefault();
                   doSearch(
@@ -173,6 +187,9 @@ export default function Navbar() {
                     pillCat
                   );
                 }}
+=======
+                onSubmit={e => { e.preventDefault(); doSearch(compQ, compLoc); }}
+>>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
               >
                 <div className="nb__compact-sec">
                   <div className="nb__compact-label">Where</div>

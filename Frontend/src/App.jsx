@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -50,11 +51,14 @@ const UserProtectedRoute = ({ children }) => {
 const PublicLayout = ({ children }) => {
   const location = useLocation();
   const isHome = location.pathname === '/';
+  const isSearch = location.pathname === '/search';
   return (
     <>
       <Navbar />
-      {/* On non-home pages, add top padding to clear the simplified fixed navbar (64px) */}
-      <main className={!isHome ? 'pt-16' : ''}>{children}</main>
+      {/* Homepage manages its own spacer inside Navbar.jsx */}
+      {/* Search page: paddingTop handled inside SearchResults itself */}
+      {/* Other pages: pt-16 (64px) clears the fixed navbar */}
+      <main className={!isHome && !isSearch ? 'pt-16' : ''}>{children}</main>
       <Footer />
     </>
   );
@@ -103,9 +107,21 @@ function AppRoutes() {
   );
 }
 
+// Helper component to scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
+
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthProvider>
         <AppRoutes />
         <Toaster
