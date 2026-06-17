@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const BusinessCard = ({ business, featured = false }) => {
-  const { id, businessName, city, state, categoryName, subcategoryName,
+  const { _id, id, businessName, city, state, categoryName, subcategoryName,
     logoUrl, description, rating, reviewCount, verified, phone, brands } = business;
 
   const { user, isLoggedIn, toggleBookmark } = useAuth();
@@ -54,11 +54,19 @@ const BusinessCard = ({ business, featured = false }) => {
         <div className="flex items-start gap-3 mb-3">
           <div className="relative flex-shrink-0">
             <img
-              src={logoUrl}
+              src={
+                logoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  businessName
+                )}&background=2563eb&color=fff&size=64&rounded=false`
+                
+              }
               alt={businessName}
               className="w-14 h-14 rounded-xl object-cover border-2 border-slate-100"
               onError={(e) => {
-                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(businessName)}&background=2563eb&color=fff&size=64&rounded=false`;
+                e.target.src =
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    businessName
+                  )}&background=2563eb&color=fff&size=64&rounded=false`;
               }}
             />
             {verified && (
@@ -116,7 +124,7 @@ const BusinessCard = ({ business, featured = false }) => {
         {/* CTA Row */}
         <div className="flex gap-2">
           <Link
-            to={`/business/${id}`}
+            to={`/business/${business._id}`}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1"
           >
             View Details <ExternalLink size={11} />

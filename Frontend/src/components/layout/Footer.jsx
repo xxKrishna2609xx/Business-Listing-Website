@@ -3,10 +3,15 @@ import {
   Mail, Phone, MapPin, ArrowRight, Heart
 } from 'lucide-react';
 import { Facebook, Instagram, Linkedin, Twitter } from '../common/SocialIcons';
-
-import { categories } from '../../data/mockData';
+import { useState, useEffect } from 'react';
+import { getCategories } from '../../services/api';
 
 const Footer = () => {
+  const [categories, setCategories] = useState([]);
+  
+  useEffect(() => {
+    getCategories().then(setCategories).catch(console.error);
+  }, []);
   return (
     <footer className="bg-slate-900 text-slate-300">
       {/* CTA Strip */}
@@ -120,7 +125,7 @@ const Footer = () => {
       {/* Bottom Bar */}
       <div className="border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-          <p>© 2024 Right Ads Digital. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Right Ads Digital. All rights reserved.</p>
           <p className="flex items-center gap-1">
             Made with <Heart size={11} className="text-rose-400 fill-rose-400" /> by Right Ads Digital Team
           </p>

@@ -1,18 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Building2, User, Mail, Phone, MapPin, Globe, FileText,
   Upload, CheckCircle, ChevronRight, Sparkles, AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { categories, subcategories } from '../../data/mockData';
-
+import {getCategories, getSubcategories, submitBusiness } from '../../services/api';
 const steps = ['Business Info', 'Location', 'Media & Socials', 'Review'];
+import { useAuth } from '../../context/AuthContext';
+import { Navigate } from 'react-router-dom';
 
 const ApplyListing = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [form, setForm] = useState({
     businessName: '', ownerName: '', email: '', phone: '',
     categoryId: '', subcategoryId: '', address: '', city: '',
@@ -21,17 +24,88 @@ const ApplyListing = () => {
   });
   const [errors, setErrors] = useState({});
 
-  const filteredSubs = subcategories.filter(s => s.categoryId === form.categoryId);
+ const filteredSubs =subcategories?.filter(s => s.categoryId === form.categoryId) || [];
+
+  useEffect(() => {
+
+    const loadData = async () => {
+
+      try {
+
+        const cats =
+          await getCategories();
+
+        const subs =
+          await getSubcategories();
+
+        setCategories(cats);
+        setSubcategories(subs);
+
+      } catch (err) {
+
+        console.error(err);
+
+        toast.error(
+          "Failed to load categories"
+        );
+      }
+    };
+
+    loadData();
+
+  }, []);
+
 
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
+
+    const {
+      name,
+      value,
+      files
+    } = e.target;
+
     if (files) {
-      if (name === 'logo') setForm(prev => ({ ...prev, logo: files[0] }));
-      else setForm(prev => ({ ...prev, gallery: Array.from(files) }));
-    } else {
-      setForm(prev => ({ ...prev, [name]: value }));
-      setErrors(prev => ({ ...prev, [name]: '' }));
+
+      if (name === "logo") {
+
+        setForm(prev => ({
+          ...prev,
+          logo: files[0]
+        }));
+
+      } else {
+
+        setForm(prev => ({
+          ...prev,
+          gallery: Array.from(files)
+        }));
+
+      }
+
+      return;
     }
+
+    if (name === "categoryId") {
+
+      setForm(prev => ({
+        ...prev,
+        categoryId: value,
+        subcategoryId: ""
+      }));
+
+    } else {
+
+      setForm(prev => ({
+        ...prev,
+        [name]: value
+      }));
+
+    }
+
+    setErrors(prev => ({
+      ...prev,
+      [name]: ""
+    }));
   };
 
   const validateStep = (step) => {
@@ -63,11 +137,70 @@ const ApplyListing = () => {
   const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 0));
 
   const handleSubmit = async () => {
+
     setLoading(true);
-    await new Promise(r => setTimeout(r, 2000));
-    setLoading(false);
-    setSubmitted(true);
-    toast.success('Application submitted successfully!');
+
+    try {
+      const selectedCategory = categories.find(
+          c => c.id === form.categoryId
+        );
+
+      const selectedSubcategory = subcategories.find(
+          s => s.id === form.subcategoryId
+        );
+
+      await submitBusiness({
+        ownerName: form.ownerName,
+        email: form.email,
+        phone: form.phone,
+
+        businessName: form.businessName,
+        categoryId: form.categoryId,
+        subcategoryId: form.subcategoryId,
+
+        categoryName: selectedCategory?.name || "",
+
+        subcategoryName: selectedSubcategory?.name || "",
+
+        address: form.address,
+        city: form.city,
+        state: form.state,
+
+        website: form.website,
+        description: form.description,
+
+          logoUrl: "",
+
+          socialMediaLinks: {
+            instagram: form.instagram,
+            facebook: form.facebook,
+            linkedin: form.linkedin,
+            twitter: form.twitter
+          },
+
+          services: (form.services || '').split(',').map(s => s.trim()).filter(Boolean)
+
+      });
+
+      setSubmitted(true);
+
+      toast.success(
+        'Application submitted successfully!'
+      );
+
+    } catch (err) {
+
+      toast.error(
+        'Failed to submit application'
+      );
+
+      console.error(err);
+
+    } finally {
+
+      setLoading(false);
+
+    }
   };
 
   const InputField = ({ name, label, type = 'text', placeholder, icon: Icon, required }) => (
@@ -231,6 +364,24 @@ const ApplyListing = () => {
                 />
                 {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Services Offered
+                </label>
+
+                <textarea
+                  name="services"
+                  value={form.services}
+                  onChange={handleChange}
+                  rows={3}
+                  placeholder="SEO, Web Development, Social Media Marketing"
+                  className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+
+                <p className="text-xs text-slate-400 mt-1">
+                  Separate services with commas
+                </p>
+              </div>
             </div>
           )}
 
@@ -308,9 +459,15 @@ const ApplyListing = () => {
                   ['Business Name', form.businessName],
                   ['Owner Name', form.ownerName],
                   ['Email', form.email],
-                  ['Phone', form.phone],
+                  ['Phone', form.phone], 
                   ['City', `${form.city}, ${form.state}`],
                   ['Website', form.website || '—'],
+                  
+                  ['Facebook', form.facebook || '—'],
+                  ['Instagram', form.instagram || '—'],
+                  ['LinkedIn', form.linkedin || '—'],
+                  ['Twitter', form.twitter || '—'],
+
                   ['Logo', form.logo?.name || 'Not uploaded'],
                   ['Gallery', form.gallery.length > 0 ? `${form.gallery.length} images` : 'Not uploaded'],
                 ].map(([label, value]) => (

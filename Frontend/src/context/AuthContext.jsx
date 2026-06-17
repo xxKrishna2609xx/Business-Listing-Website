@@ -1,4 +1,14 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import {
+  registerUser,
+  loginUserApi
+} from '../services/api';
+
+import {
+  addBookmark,
+  removeBookmark,
+  getBookmarks
+} from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -15,146 +25,168 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Admin login utility
-  const loginAdmin = (email, password) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (email === 'admin@rightads.digital' && password === 'Admin@123') {
-          const adminUser = { email, role: 'admin', name: 'Admin User', uid: 'admin-001' };
-          setUser(adminUser);
-          localStorage.setItem('auth_user', JSON.stringify(adminUser));
-          resolve(adminUser);
-        } else {
-          reject(new Error('Invalid credentials. Use admin@rightads.digital / Admin@123'));
-        }
-      }, 800);
-    });
-  };
-
   // Regular user/owner login
-  const loginUser = (email, password) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        // If it's the admin, use admin login
-        if (email === 'admin@rightads.digital') {
-          if (password === 'Admin@123') {
-            const adminUser = { email, role: 'admin', name: 'Admin User', uid: 'admin-001' };
-            setUser(adminUser);
-            localStorage.setItem('auth_user', JSON.stringify(adminUser));
-            resolve(adminUser);
-          } else {
-            reject(new Error('Invalid admin credentials.'));
-          }
-          return;
-        }
+  const loginUser = async (email, password) => {
 
-        // Get users list
-        const users = JSON.parse(localStorage.getItem('local_users') || '[]');
-        const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const data = await loginUserApi(email, password);
 
-        if (foundUser) {
-          if (foundUser.password === password) {
-            // Don't persist password in memory
-            const { password: _, ...safeUser } = foundUser;
-            setUser(safeUser);
-            localStorage.setItem('auth_user', JSON.stringify(safeUser));
-            resolve(safeUser);
-          } else {
-            reject(new Error('Invalid password.'));
-          }
-        } else {
-          reject(new Error('No account found with this email.'));
-        }
-      }, 800);
-    });
+    localStorage.setItem(
+      'access_token',
+      data.access_token
+    );
+
+    localStorage.setItem(
+      'refresh_token',
+      data.refresh_token
+    );
+
+    const bookmarks = await getBookmarks(data.user.id);
+    const bookmarkIds =bookmarks.map(b => b.businessId);
+
+    data.user.bookmarks =bookmarkIds;
+    setUser(data.user);
+
+    localStorage.setItem(
+      'auth_user',
+      JSON.stringify(data.user)
+    );
+
+    return data.user;
   };
+
+
 
   // Regular user registration
-  const signupUser = (name, email, phone, password) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem('local_users') || '[]');
-        
-        // Check if email already exists
-        const exists = users.some(u => u.email.toLowerCase() === email.toLowerCase() || u.phone === phone);
-        if (exists) {
-          reject(new Error('Account with this email or phone number already exists.'));
-          return;
-        }
+  const signupUser = async (
+    name,
+    email,
+    phone,
+    password
+  ) => {
 
-        // Create new user (structured like a MongoDB document)
-        const newUser = {
-          uid: 'usr-' + Date.now().toString(36),
-          name,
-          email,
-          phone,
-          password,
-          role: 'user',
-          bookmarks: [],
-          createdAt: new Date().toISOString()
-        };
-
-        users.push(newUser);
-        localStorage.setItem('local_users', JSON.stringify(users));
-
-        // Log in the user immediately
-        const { password: _, ...safeUser } = newUser;
-        setUser(safeUser);
-        localStorage.setItem('auth_user', JSON.stringify(safeUser));
-        resolve(safeUser);
-      }, 800);
+    await registerUser({
+      name,
+      email,
+      phone,
+      password
     });
+
+    const loginData = await loginUserApi(email, password);
+
+    localStorage.setItem(
+      'access_token',
+      loginData.access_token
+    );
+
+    localStorage.setItem(
+      'refresh_token',
+      loginData.refresh_token
+    );
+
+    const bookmarks = await getBookmarks(loginData.user.id);
+
+    loginData.user.bookmarks = bookmarks.map(b => b.businessId);
+
+    setUser(loginData.user);
+
+    localStorage.setItem(
+      'auth_user',
+      JSON.stringify(loginData.user)
+    );
+
+    return loginData.user;
   };
 
   // Toggle bookmark listing
-  const toggleBookmark = (businessId) => {
+  const toggleBookmark = async (
+    businessId
+  ) => {
+
     if (!user) return false;
 
-    // Admin cannot bookmark
-    if (user.role === 'admin') return false;
+    const bookmarked =user.bookmarks?.includes(businessId);
 
-    const users = JSON.parse(localStorage.getItem('local_users') || '[]');
-    const userIndex = users.findIndex(u => u.uid === user.uid);
+    try {
 
-    if (userIndex !== -1) {
-      const userRecord = users[userIndex];
-      const bookmarks = userRecord.bookmarks || [];
-      const isBookmarked = bookmarks.includes(businessId);
+      if (bookmarked) {
 
-      let newBookmarks;
-      if (isBookmarked) {
-        newBookmarks = bookmarks.filter(id => id !== businessId);
+        await removeBookmark(
+          user.id,
+          businessId
+        );
+
       } else {
-        newBookmarks = [...bookmarks, businessId];
+
+        await addBookmark(
+          user.id,
+          businessId
+        );
+
       }
 
-      userRecord.bookmarks = newBookmarks;
-      users[userIndex] = userRecord;
-      localStorage.setItem('local_users', JSON.stringify(users));
+      const updatedBookmarks = bookmarked ? user.bookmarks.filter(id => id !== businessId): [...(user.bookmarks || []),businessId];
 
-      // Update in-memory user and active session
-      const updatedUser = { ...user, bookmarks: newBookmarks };
+      const updatedUser = {
+        ...user,
+        bookmarks:
+          updatedBookmarks
+      };
+
       setUser(updatedUser);
-      localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+
+      localStorage.setItem(
+        "auth_user",
+        JSON.stringify(updatedUser)
+      );
+
       return true;
+
+    } catch (err) {
+
+      console.error(err);
+
+      return false;
     }
-    return false;
   };
 
+  const setLoggedInUser = (
+      userData
+    ) => {
+
+      setUser(userData);
+
+      localStorage.setItem(
+        'auth_user',
+        JSON.stringify(userData)
+      );
+    };
+
   const logout = () => {
+
     setUser(null);
-    localStorage.removeItem('auth_user');
+
+    localStorage.removeItem(
+      'auth_user'
+    );
+
+    localStorage.removeItem(
+      'access_token'
+    );
+
+    localStorage.removeItem(
+      'refresh_token'
+    );
   };
 
   return (
     <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      loginAdmin, 
+      user,
+      loading,
+      setLoggedInUser,
       loginUser,
       signupUser,
       toggleBookmark,
-      logout, 
+      logout,
       isAdmin: user?.role === 'admin',
       isLoggedIn: !!user
     }}>

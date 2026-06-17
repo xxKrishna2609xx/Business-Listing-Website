@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   MapPin, Phone, Mail, Globe, BadgeCheck, Star,
   MessageCircle, Send, ChevronRight, Building2, Shield, Sparkles, CheckCircle, Heart
@@ -7,16 +7,25 @@ import {
 import { Facebook, Instagram, Linkedin, Twitter } from '../../components/common/SocialIcons';
 
 import LeadFormModal from '../../components/business/LeadFormModal';
-import { businesses } from '../../data/mockData';
+import {
+  getBusinessById,
+  getReviews,
+  createReview
+} from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+
 
 const BusinessDetails = () => {
   const { id } = useParams();
   const [business, setBusiness] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [leadModalOpen, setLeadModalOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const navigate = useNavigate();
 
   const { user, isLoggedIn, toggleBookmark } = useAuth();
   const isBookmarked = user?.bookmarks?.includes(id) || false;
@@ -29,14 +38,101 @@ const BusinessDetails = () => {
     toggleBookmark(id);
     toast.success(isBookmarked ? 'Removed from bookmarks' : 'Saved to bookmarks');
   };
+  const handleLeadClick = () => {
+    if (!isLoggedIn) {
 
+      toast.error('Please login to contact this business');
+
+      navigate('/login');
+      return;
+    }
+
+    setLeadModalOpen(true);
+  };
+  const handleReviewSubmit = async () => {
+
+    if (!isLoggedIn) {
+
+      toast.error(
+        'Please login to leave a review'
+      );
+
+      navigate('/login');
+
+      return;
+    }
+
+    if (!comment.trim()) {
+
+      toast.error(
+        'Please write a review'
+      );
+
+      return;
+    }
+
+    try {
+
+      const response =
+        await createReview({
+          businessId: business.id,
+          rating,
+          comment
+        });
+
+      toast.success(
+        response.message ||
+        'Review submitted successfully'
+      );
+
+      const reviewData =
+        await getReviews(
+          business.id
+        );
+
+      setReviews(reviewData);
+
+      setComment('');
+      setRating(5);
+
+    } catch (err) {
+
+      console.error(err);
+
+      if (
+        err.response?.status === 401
+      ) {
+
+        toast.error(
+          'Please login to leave a review'
+        );
+
+        navigate('/login');
+
+        return;
+      }
+
+      toast.error(
+        err.response?.data?.detail ||
+        'Failed to submit review'
+      );
+    }
+  };
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      const biz = businesses.find(b => b.id === id);
-      setBusiness(biz || null);
-      setLoading(false);
-    }, 800);
+    const fetchBiz = async () => {
+      setLoading(true);
+      try {
+        const data = await getBusinessById(id);
+        setBusiness(data);
+        const reviewData = await getReviews(data.id);
+        setReviews(reviewData);
+      } catch (err) {
+        console.error("Failed to fetch business", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBiz();
   }, [id]);
 
   if (loading) {
@@ -86,61 +182,145 @@ const BusinessDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Main Info */}
           <div className="lg:col-span-2 space-y-5">
+
             {/* Header Card */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              {/* Cover */}
-              <div className={`h-32 bg-gradient-to-r from-blue-600 to-teal-500 relative`}>
+            <div className="w-full bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+
+              {/* Gallery / Cover */}
+              <div className="relative">
+
+                <img
+                  src={
+                    business.galleryImages?.[activeImage] ||
+                    business.logoUrl ||
+                    "/default-logo.jpg"
+                  }
+                  alt={business.businessName}
+                  className="w-full h-54 md:h-50 object-cover"
+                />
+
                 {business.featured && (
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-yellow-400 text-slate-900 px-3 py-1 rounded-full text-xs font-bold">
-                    <Sparkles size={11} /> FEATURED
+                  <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-yellow-400 text-slate-900 px-3 py-1.5 rounded-full text-xs font-bold shadow">
+                    <Sparkles size={12} />
+                    FEATURED
+                  </div>
+                )}
+
+                {business.galleryImages?.length > 1 && (
+                  <div className="absolute bottom-3 left-3 right-3 flex gap-2 overflow-x-auto">
+                    {business.galleryImages.map((img, index) => (
+                      <img
+                        key={index}
+                        src={img}
+                        alt=""
+                        onClick={() => setActiveImage(index)}
+                        className={`w-16 h-16 rounded-xl object-cover cursor-pointer border-2 flex-shrink-0 ${activeImage === index
+                            ? "border-white"
+                            : "border-transparent opacity-80"
+                          }`}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
 
-              <div className="px-5 pb-5">
-                <div className="flex items-end gap-4 -mt-8 mb-4">
-                  <div className="relative">
+              <div className="px-6 py-6">
+
+                <div className="flex gap-5 items-start">
+
+                  {/* Logo */}
+                  <div className="relative flex-shrink-0">
+
                     <img
-                      src={business.logoUrl}
+                      src={business.logoUrl || "/default-logo.jpg"}
                       alt={business.businessName}
-                      className="w-20 h-20 rounded-2xl border-4 border-white shadow-lg object-cover"
+                      className="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-lg bg-white"
                     />
+
                     {business.verified && (
-                      <div className="absolute -bottom-1.5 -right-1.5 bg-teal-500 rounded-full p-1 shadow">
-                        <BadgeCheck size={14} className="text-white" />
+                      <div className="absolute -bottom-2 -right-2 bg-teal-500 rounded-full p-1.5">
+                        <BadgeCheck
+                          size={15}
+                          className="text-white"
+                        />
                       </div>
                     )}
+
                   </div>
-                  <div className="flex-1 min-w-0 pb-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h1 className="text-xl font-black text-slate-900">{business.businessName}</h1>
+
+                  {/* Details */}
+                  <div className="flex-1">
+
+                    <div className="flex flex-wrap items-center gap-3">
+
+                      <h1 className="text-3xl font-bold text-slate-900">
+                        {business.businessName}
+                      </h1>
+
                       {business.verified && (
-                        <span className="flex items-center gap-1 bg-teal-50 text-teal-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-teal-200">
-                          <BadgeCheck size={11} /> Verified
+                        <span className="bg-teal-50 text-teal-700 border border-teal-200 px-3 py-1 rounded-full text-sm font-medium">
+                          Verified
                         </span>
                       )}
+
                     </div>
-                    <div className="flex items-center gap-3 mt-1 flex-wrap">
-                      <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-medium border border-blue-100">
-                        {business.subcategoryName || business.categoryName}
+
+                    <div className="flex items-center gap-4 mt-3 flex-wrap">
+
+                      <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium border border-blue-100">
+                        {business.subcategoryName ||
+                          business.categoryName}
                       </span>
+
                       <div className="flex items-center gap-1">
-                        <Star size={13} className="text-amber-400 fill-amber-400" />
-                        <span className="text-sm font-bold text-slate-800">{business.rating}</span>
-                        <span className="text-xs text-slate-400">({business.reviewCount} reviews)</span>
+
+                        <Star
+                          size={18}
+                          className="fill-amber-400 text-amber-400"
+                        />
+
+                        <span className="font-semibold text-slate-900">
+                          {business.rating || 0}
+                        </span>
+
+                        <span className="text-slate-500">
+                          ({business.reviewCount || 0} reviews)
+                        </span>
+
                       </div>
+
                     </div>
+
+                    <div className="flex items-center gap-2 mt-4 text-slate-500">
+
+                      <MapPin
+                        size={16}
+                        className="text-blue-500"
+                      />
+
+                      <span>
+                        {business.city}, {business.state}
+                      </span>
+
+                    </div>
+
                   </div>
+
                 </div>
 
                 {/* Description */}
-                <p className="text-slate-600 text-sm leading-relaxed">{business.description}</p>
+                <div className="mt-6 pt-6 border-t border-slate-100">
 
-                {/* Location */}
-                <div className="flex items-center gap-1.5 mt-3 text-sm text-slate-500">
-                  <MapPin size={14} className="text-blue-400" />
-                  {business.address}, {business.city}, {business.state}
+                  <h3 className="font-semibold text-slate-900 mb-2">
+                    About Business
+                  </h3>
+
+                  <p className="text-slate-600 leading-8">
+                    {business.description}
+                  </p>
+
                 </div>
+
               </div>
             </div>
 
@@ -176,30 +356,153 @@ const BusinessDetails = () => {
               </div>
             )}
 
-            {/* Social */}
-            {business.socialMediaLinks && Object.keys(business.socialMediaLinks).length > 0 && (
-              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                <h2 className="font-bold text-slate-900 mb-4">Social Media</h2>
-                <div className="flex gap-3">
-                  {[
-                    { key: 'facebook', Icon: Facebook, color: 'hover:bg-blue-600' },
-                    { key: 'instagram', Icon: Instagram, color: 'hover:bg-pink-500' },
-                    { key: 'linkedin', Icon: Linkedin, color: 'hover:bg-blue-700' },
-                    { key: 'twitter', Icon: Twitter, color: 'hover:bg-sky-500' },
-                  ].map(({ key, Icon, color }) => business.socialMediaLinks[key] && (
-                    <a
-                      key={key}
-                      href={business.socialMediaLinks[key]}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`w-10 h-10 bg-slate-100 ${color} hover:text-white text-slate-600 rounded-xl flex items-center justify-center transition-colors`}
-                    >
-                      <Icon size={18} />
-                    </a>
-                  ))}
+
+            {/* Reviews */}
+            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+
+                <h2 className="font-bold text-slate-900 text-lg">
+                  Customer Reviews
+                </h2>
+
+                <div className="flex items-center gap-2">
+                  <Star
+                    size={18}
+                    className="fill-amber-400 text-amber-400"
+                  />
+
+                  <span className="font-semibold text-slate-900">
+                    {business?.rating || 0}
+                  </span>
+
+                  <span className="text-slate-500 text-sm">
+                    ({business?.reviewCount || 0})
+                  </span>
                 </div>
+
               </div>
-            )}
+
+              {/* Write Review */}
+              <div className="border border-slate-200 rounded-xl p-3 mb-5">
+
+                <textarea
+                  value={comment}
+                  onChange={(e) =>
+                    setComment(e.target.value)
+                  }
+                  placeholder="Share your experience..."
+                  rows={2}
+                  className="w-full border border-slate-200 rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+
+                <div className="flex items-center justify-between mt-3">
+
+                  <div className="flex gap-0.5">
+
+                    {[1, 2, 3, 4, 5].map((star) => (
+
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() =>
+                          setRating(star)
+                        }
+                      >
+
+                        <Star
+                          size={26}
+                          className={
+                            star <= rating
+                              ? "fill-amber-400 text-amber-400"
+                              : "text-slate-300"
+                          }
+                        />
+
+                      </button>
+
+                    ))}
+
+                  </div>
+
+                  <button
+                    onClick={handleReviewSubmit}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-semibold"
+                  >
+                    Submit Review
+                  </button>
+
+                </div>
+
+              </div>
+
+              {/* Reviews List */}
+              <div className="space-y-5 max-h-[500px] overflow-y-auto pr-2">
+
+                {reviews.length > 0 ? (
+
+                  reviews.map((review) => (
+
+                    <div
+                      key={review._id}
+                      className="border-b border-slate-100 pb-4"
+                    >
+
+                      <div className="flex justify-between items-start">
+
+                        <div>
+
+                          <h4 className="font-semibold text-slate-900">
+                            {review.customerName}
+                          </h4>
+
+                          <p className="text-xs text-slate-400 mt-1">
+                            {review.createdAt
+                              ? new Date(
+                                review.createdAt
+                              ).toLocaleDateString()
+                              : ""}
+                          </p>
+
+                        </div>
+
+                        <div className="flex">
+
+                          {[...Array(review.rating)].map(
+                            (_, i) => (
+                              <Star
+                                key={i}
+                                size={14}
+                                className="fill-amber-400 text-amber-400"
+                              />
+                            )
+                          )}
+
+                        </div>
+
+                      </div>
+
+                      <p className="text-sm text-slate-600 mt-3 leading-relaxed">
+                        {review.comment}
+                      </p>
+
+                    </div>
+
+                  ))
+
+                ) : (
+
+                  <div className="text-center py-6 text-slate-500">
+                    No reviews yet. Be the first to review this business.
+                  </div>
+
+                )}
+
+              </div>
+
+            </div>
+
           </div>
 
           {/* Right: Contact Sidebar */}
@@ -207,36 +510,62 @@ const BusinessDetails = () => {
             {/* CTA Buttons */}
             <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
               <button
-                onClick={() => setLeadModalOpen(true)}
+                onClick={handleLeadClick}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 cursor-pointer"
               >
                 <Send size={15} /> Request a Quote
               </button>
               <button
                 onClick={handleBookmarkToggle}
-                className={`w-full py-3 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border cursor-pointer ${
-                  isBookmarked
+                className={`w-full py-3 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border cursor-pointer ${isBookmarked
                     ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
                     : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 <Heart size={15} className={isBookmarked ? 'fill-red-500 text-red-500' : ''} />
                 {isBookmarked ? 'Saved to Bookmarks' : 'Save / Bookmark'}
               </button>
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl text-sm font-bold transition-colors"
-              >
-                <MessageCircle size={15} /> WhatsApp
-              </a>
-              <a
-                href={`tel:${business.phone}`}
-                className="w-full flex items-center justify-center gap-2 border border-slate-200 hover:border-blue-400 text-slate-700 hover:text-blue-600 py-3 rounded-xl text-sm font-semibold transition-colors"
-              >
-                <Phone size={15} /> {business.phone}
-              </a>
+                {isLoggedIn ? (
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl text-sm font-bold transition-colors"
+                  >
+                    <MessageCircle size={15} />
+                    WhatsApp
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => {
+                      toast.error('Please login to contact this business');
+                      navigate('/login');
+                    }}
+                    className="w-full bg-green-500 text-white py-3 rounded-xl text-sm font-bold"
+                  >
+                    Login for WhatsApp
+                  </button>
+                )}
+              {isLoggedIn ? (
+                  <a
+                    href={`tel:${business.phone}`}
+                    className="w-full flex items-center justify-center gap-2 border border-slate-200 hover:border-blue-400 text-slate-700 hover:text-blue-600 py-3 rounded-xl text-sm font-semibold transition-colors"
+                  >
+                    <Phone size={15} />
+                    {business.phone}
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => {
+                      toast.error('Please login to view contact details');
+                      navigate('/login');
+                    }}
+                    className="w-full flex items-center justify-center gap-2 border border-slate-200 py-3 rounded-xl text-sm font-semibold"
+                  >
+                    <Phone size={15} />
+                    Login to View Number
+                  </button>
+                )}
             </div>
 
             {/* Contact Details */}
@@ -264,7 +593,30 @@ const BusinessDetails = () => {
                 </div>
               </div>
             </div>
-
+            {/* Social */}
+            {business.socialMediaLinks && Object.keys(business.socialMediaLinks).length > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                <h2 className="font-bold text-slate-900 mb-4">Social Media</h2>
+                <div className="flex gap-3">
+                  {[
+                    { key: 'facebook', Icon: Facebook, color: 'hover:bg-blue-600' },
+                    { key: 'instagram', Icon: Instagram, color: 'hover:bg-pink-500' },
+                    { key: 'linkedin', Icon: Linkedin, color: 'hover:bg-blue-700' },
+                    { key: 'twitter', Icon: Twitter, color: 'hover:bg-sky-500' },
+                  ].map(({ key, Icon, color }) => business.socialMediaLinks[key] && (
+                    <a
+                      key={key}
+                      href={business.socialMediaLinks[key]}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`w-10 h-10 bg-slate-100 ${color} hover:text-white text-slate-600 rounded-xl flex items-center justify-center transition-colors`}
+                    >
+                      <Icon size={18} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Verified Badge */}
             {business.verified && (
               <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4 flex items-center gap-3">

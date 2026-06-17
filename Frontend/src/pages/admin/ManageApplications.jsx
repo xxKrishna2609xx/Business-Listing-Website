@@ -1,16 +1,46 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, CheckCircle, XCircle, Trash2, Search, Filter } from 'lucide-react';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { applications, categories } from '../../data/mockData';
+
 import toast from 'react-hot-toast';
+import {
+  getApplications,
+  approveApplication,
+  rejectApplication,
+  deleteApplication
+} from '../../services/api';
 
 const ManageApplications = () => {
-  const [apps, setApps] = useState(applications);
+  const [apps, setApps] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [viewModal, setViewModal] = useState(null);
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  useEffect(() => {
+
+    const loadApplications = async () => {
+
+      try {
+
+        const data =
+          await getApplications();
+
+        setApps(data);
+
+      } catch (err) {
+
+        console.error(err);
+
+        toast.error(
+          "Failed to load applications"
+        );
+      }
+    };
+
+    loadApplications();
+
+  }, []);
 
   const filtered = apps.filter(a => {
     const matchSearch = a.businessName.toLowerCase().includes(search.toLowerCase()) ||
@@ -19,24 +49,86 @@ const ManageApplications = () => {
     return matchSearch && matchStatus;
   });
 
-  const handleApprove = (id) => {
-    setApps(prev => prev.map(a => a.id === id ? { ...a, status: 'APPROVED' } : a));
-    toast.success('Application approved! Business is now live.');
-    setViewModal(null);
+  const handleApprove = async (id) => {
+
+    try {
+
+      await approveApplication(id);
+
+      setApps(
+        apps.filter(
+          app => app._id !== id
+        )
+      );
+
+      toast.success(
+        'Application approved'
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      toast.error(
+        'Approval failed'
+      );
+    }
   };
 
-  const handleReject = (id) => {
-    setApps(prev => prev.map(a => a.id === id ? { ...a, status: 'REJECTED', notes: rejectReason } : a));
-    toast.error('Application rejected.');
-    setRejectModal(null);
-    setRejectReason('');
-    setViewModal(null);
+  const handleReject = async (id) => {
+
+    try {
+
+      await rejectApplication(id, rejectReason);
+
+      setApps(
+        apps.filter(
+          app => app._id !== id
+        )
+      );
+
+      toast.success(
+        'Application rejected'
+      );
+
+      setRejectModal(null);
+      setRejectReason('');
+      setViewModal(null);
+
+    } catch (err) {
+
+      console.error(err);
+
+      toast.error(
+        'Rejection failed'
+      );
+    }
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this application?')) {
-      setApps(prev => prev.filter(a => a.id !== id));
-      toast.success('Application deleted.');
+  const handleDelete = async (id) => {
+
+    if (
+      !window.confirm('Are you sure you want to delete this application?')
+    ) return;
+
+    try {
+
+      await deleteApplication(id);
+
+      setApps(
+        prev =>
+          prev.filter(
+            a => a._id !== id
+          )
+      );
+
+      toast.success('Application deleted');
+
+    } catch (err) {
+
+      console.error(err);
+
+      toast.error('Delete failed');
     }
   };
 
@@ -104,13 +196,13 @@ const ManageApplications = () => {
                 </tr>
               ) : (
                 filtered.map(app => {
-                  const cat = categories.find(c => c.id === app.categoryId);
+                  
                   return (
-                    <tr key={app.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={app._id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 font-semibold text-slate-800">{app.businessName}</td>
                       <td className="px-4 py-3 text-slate-600">{app.ownerName}</td>
                       <td className="px-4 py-3 text-slate-500 text-xs">{app.email}</td>
-                      <td className="px-4 py-3 text-slate-500 text-xs">{cat?.name || 'N/A'}</td>
+                      <td className="px-4 py-3 text-slate-500 text-xs">{app.categoryName}</td>
                       <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">
                         {new Date(app.createdAt).toLocaleDateString()}
                       </td>
@@ -127,7 +219,7 @@ const ManageApplications = () => {
                           {app.status === 'PENDING' && (
                             <>
                               <button
-                                onClick={() => handleApprove(app.id)}
+                                onClick={() => handleApprove(app._id)}
                                 className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
                                 title="Approve"
                               >
@@ -143,7 +235,7 @@ const ManageApplications = () => {
                             </>
                           )}
                           <button
-                            onClick={() => handleDelete(app.id)}
+                            onClick={() => handleDelete(app._id)}
                             className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Delete"
                           >
@@ -175,6 +267,8 @@ const ManageApplications = () => {
                 ['Phone', viewModal.phone],
                 ['City', `${viewModal.city}, ${viewModal.state}`],
                 ['Description', viewModal.description],
+                ['Website', viewModal.website || '—'],
+                ['Services', viewModal.services || '—'],
               ].map(([label, value]) => (
                 <div key={label} className="flex gap-4">
                   <span className="text-slate-400 font-medium w-20 flex-shrink-0">{label}:</span>
@@ -186,7 +280,7 @@ const ManageApplications = () => {
               {viewModal.status === 'PENDING' && (
                 <>
                   <button
-                    onClick={() => handleApprove(viewModal.id)}
+                    onClick={() => handleApprove(viewModal._id)}
                     className="flex-1 bg-teal-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-teal-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <CheckCircle size={15} /> Approve
@@ -222,7 +316,7 @@ const ManageApplications = () => {
             />
             <div className="flex gap-2">
               <button
-                onClick={() => handleReject(rejectModal.id)}
+                onClick={() => handleReject(rejectModal._id)}
                 className="flex-1 bg-red-500 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-red-600 transition-colors"
               >
                 Confirm Reject

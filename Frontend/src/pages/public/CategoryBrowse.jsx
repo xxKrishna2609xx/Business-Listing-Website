@@ -3,28 +3,49 @@ import { useParams, Link } from 'react-router-dom';
 import { Building2, ChevronRight, SlidersHorizontal } from 'lucide-react';
 import BusinessCard from '../../components/business/BusinessCard';
 import { BusinessCardSkeleton } from '../../components/common/Skeletons';
-import { businesses, categories, subcategories } from '../../data/mockData';
+import { searchBusinesses, getCategories, getSubcategories } from '../../services/api';
 
 const CategoryBrowse = () => {
   const { categorySlug, subcategorySlug } = useParams();
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [cats, subs] = await Promise.all([getCategories(), getSubcategories()]);
+        setCategories(cats);
+        setSubcategories(subs);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchData();
+  }, []);
 
   const category = categories.find(c => c.slug === categorySlug);
   const subcategory = subcategories.find(s => s.slug === subcategorySlug);
   const catSubcategories = subcategories.filter(s => s.categoryId === category?.id);
 
   useEffect(() => {
-    setLoading(true);
-    const timer = setTimeout(() => {
-      let filtered = businesses.filter(b => b.status === 'APPROVED');
-      if (category) filtered = filtered.filter(b => b.categoryId === category.id);
-      if (subcategory) filtered = filtered.filter(b => b.subcategoryId === subcategory.id);
-      setResults(filtered);
-      setLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [categorySlug, subcategorySlug]);
+    const fetchResults = async () => {
+      setLoading(true);
+      try {
+        const data = await searchBusinesses(); // Fetch all or apply initial filter logic if needed in backend
+        let filtered = data.filter(b => b.status === 'APPROVED');
+        if (category) filtered = filtered.filter(b => b.categoryId === category.id);
+        if (subcategory) filtered = filtered.filter(b => b.subcategoryId === subcategory.id);
+        setResults(filtered);
+      } catch (err) {
+        console.error("Failed to load results", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (categories.length > 0) fetchResults();
+  }, [categorySlug, subcategorySlug, category, subcategory, categories]);
 
   return (
     <div className="min-h-screen bg-slate-50">

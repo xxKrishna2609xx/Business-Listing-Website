@@ -1,16 +1,52 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Search, MapPin, GraduationCap, Heart, Building2, UtensilsCrossed, Home,
-  Dumbbell, ArrowRight, Star, BadgeCheck, Sparkles, TrendingUp, Shield,
-  Zap, Users, ChevronRight, Quote, Hotel, Key, Activity, HardHat, Dog,
-  BedDouble, Smile, Coins, PartyPopper, Car, Truck, Send, Grid,
-  ShoppingBag, Apple, Milk, Pill, Droplet, WashingMachine, Plane, Train, Bus
+  Search,
+  MapPin,
+  GraduationCap,
+  Heart,
+  Building2,
+  UtensilsCrossed,
+  Home,
+  Dumbbell,
+  ArrowRight,
+  Star,
+  BadgeCheck,
+  Sparkles,
+  TrendingUp,
+  Shield,
+  Zap,
+  Users,
+  ChevronRight,
+  ChevronLeft,
+  Quote,
+  Hotel,
+  Key,
+  Activity,
+  HardHat,
+  Dog,
+  BedDouble,
+  Smile,
+  Coins,
+  PartyPopper,
+  Car,
+  Truck,
+  Send,
+  Grid,
+  ShoppingBag,
+  Apple,
+  Milk,
+  Pill,
+  Droplet,
+  WashingMachine,
+  Plane,
+  Train,
+  Bus,Locate
 } from 'lucide-react';
 import BusinessCard from '../../components/business/BusinessCard';
-import { businesses, categories } from '../../data/mockData';
 import { BusinessCardSkeleton } from '../../components/common/Skeletons';
-
+import { getCategories, getBusinesses } from '../../services/api';
+import toast from 'react-hot-toast';
 
 const iconMap = {
   UtensilsCrossed, Hotel, Sparkles, Home, Heart, GraduationCap, Key,
@@ -27,16 +63,52 @@ const StatCard = ({ icon: Icon, value, label, color }) => (
     <div className="text-blue-200 text-sm">{label}</div>
   </div>
 );
-
+/* ── Banner images (Unsplash CDN, free-to-use) ── */
+const BANNERS = [
+  {
+    url: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1400&q=80',
+    title: 'Find Trusted Businesses Near You',
+    sub: 'Discover 700+ verified local businesses across India',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1400&q=80',
+    title: 'Connect with Local Service Experts',
+    sub: 'From home repairs to healthcare — all in one place',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1400&q=80',
+    title: 'Grow Your Business with Right Ads',
+    sub: 'List your business free and reach thousands of customers',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1400&q=80',
+    title: 'India\'s Premier Business Directory',
+    sub: 'Restaurants, Hotels, Education, Health and more',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1400&q=80',
+    title: 'Real Reviews. Verified Listings.',
+    sub: 'Make informed decisions with genuine customer feedback',
+  },
+];
 const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchCity, setSearchCity] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [locLoading, setLocLoading] = useState(false);
+  const [loadingPincode, setLoadingPincode] =useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('featured');
+  const [categories, setCategories] = useState([]);
+  const [businesses, setBusinesses] = useState([]);
+  const [bannerIdx, setBannerIdx] = useState(0);
+  const banner = BANNERS[bannerIdx];
   const navigate = useNavigate();
   const searchRef = useRef(null);
+  const bannerTimer = useRef(null);
+  const [bannerAnim, setBannerAnim] = useState('slide-in');
 
   const allSuggestions = [
     'SEO Services', 'Web Development', 'Graphic Design', 'Social Media Marketing',
@@ -44,9 +116,120 @@ const HomePage = () => {
     'Content Writing', 'Digital Marketing', 'Logo Design', 'E-commerce',
   ];
 
+  /* ── Auto-advance banner every 5s ── */
+  const advanceBanner = (dir = 1) => {
+    setBannerAnim('slide-out');
+    setTimeout(() => {
+      setBannerIdx(i => (i + dir + BANNERS.length) % BANNERS.length);
+      setBannerAnim('slide-in');
+    }, 320);
+  };
+
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1200);
-    return () => clearTimeout(timer);
+    bannerTimer.current = setInterval(() => advanceBanner(1), 5000);
+    return () => clearInterval(bannerTimer.current);
+  }, []);
+
+  const goBanner = (dir) => {
+    clearInterval(bannerTimer.current);
+    advanceBanner(dir);
+    bannerTimer.current = setInterval(() => advanceBanner(1), 5000);
+  };
+  const detectLocation = () => {
+    
+    return new Promise((resolve) => {
+
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+
+        async (position) => {
+
+          try {
+
+            const { latitude, longitude } =
+              position.coords;
+
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+            );
+
+            const data = await res.json();
+
+            resolve({
+              city:
+                data.address.city ||
+                data.address.town ||
+                data.address.village ||
+                '',
+              pincode:
+                data.address.postcode || ''
+            });
+
+          } catch {
+
+            resolve(null);
+          }
+        },
+
+        () => resolve(null)
+
+      );
+    });
+  };
+  const handleDetectLocation = async () => {
+
+    try {
+
+      setLocLoading(true);
+
+      const loc = await detectLocation();
+
+      if (!loc) {
+
+        toast.error('Unable to detect location');
+        return;
+      }
+
+      if (loc.city) {
+        setSearchCity(loc.city);
+      }
+
+      if (loc.pincode) {
+        setPincode(loc.pincode);
+      }
+
+      toast.success('Location detected successfully');
+
+    } catch (err) {
+
+      console.error(err);
+
+      toast.error('Location access denied');
+
+    } finally {
+
+      setLocLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [cats, bizs] = await Promise.all([getCategories(), getBusinesses()]);
+        setCategories(cats);
+        setBusinesses(bizs);
+      } catch (err) {
+        console.error("Failed to load data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -70,118 +253,258 @@ const HomePage = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBannerIdx(prev =>
+        (prev + 1) % BANNERS.length
+      );
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   const handleSearch = (e) => {
     e.preventDefault();
+
+    const params = new URLSearchParams();
+
     if (searchQuery.trim()) {
-      navigate(`/search?query=${encodeURIComponent(searchQuery)}&city=${encodeURIComponent(searchCity)}`);
+      params.set(
+        'query',
+        searchQuery.trim()
+      );
+    }
+
+    if (searchCity.trim()) {
+      params.set(
+        'city',
+        searchCity.trim()
+      );
+    }
+
+    if (pincode.trim()) {
+      params.set(
+        'pincode',
+        pincode.trim()
+      );
+    }
+
+    if ([...params.keys()].length === 0) {
+      return;
+    }
+
+    navigate(
+      `/search?${params.toString()}`
+    );
+  };
+
+  const handlePincodeChange = async (value) => {
+    setPincode(value);
+    setLoadingPincode(true);
+    if (value.length < 6) {
+      setSearchCity('');
+    }
+    
+    if (value.length === 6) {
+
+      try {
+
+        const res = await fetch(
+          `https://api.postalpincode.in/pincode/${value}`
+        );
+
+        const data = await res.json();
+        setLoadingPincode(false);
+
+        if (
+          data[0].Status === 'Success'
+        ) {
+
+          setSearchCity(
+            data[0].PostOffice[0].District ||
+            data[0].PostOffice[0].Block ||
+            data[0].PostOffice[0].Name
+          );
+        }
+
+      } catch (err) {
+
+        console.error('Pincode lookup failed',err);
+        setLoadingPincode(false);
+      }
     }
   };
 
-  const displayedBusinesses = activeTab === 'featured'
-    ? businesses.filter(b => b.featured)
-    : businesses.slice().reverse().slice(0, 4);
+  const displayedBusinesses = activeTab === 'featured' ? businesses.filter(b => b.featured) : businesses.slice().reverse().slice(0, 4);
 
   return (
     <div className="min-h-screen">
+
       {/* ───────── HERO SECTION ───────── */}
-      <section className="hero-gradient relative overflow-hidden pt-16 pb-20 md:pt-28 md:pb-28">
-        {/* Decorative blobs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-teal-400/10 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-700/20 rounded-full blur-3xl" />
+      <section style={{ position: 'relative', overflow: 'hidden', minHeight: 520 }}>
+
+        {/* Background image */}
+        <div key={bannerIdx} style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `url(${banner.url})`,
+          backgroundSize: 'cover', backgroundPosition: 'center',
+          animation: `${bannerAnim} 0.38s ease`,
+        }} />
+        {/* Dark overlay */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(10,20,60,0.72) 0%, rgba(10,20,60,0.55) 100%)' }} />
+
+        {/* Arrow controls */}
+        {[{ dir: -1, side: 'left', Icon: ChevronLeft }, { dir: 1, side: 'right', Icon: ChevronRight }].map(({ dir, side, Icon }) => (
+          <button key={side} onClick={() => goBanner(dir)} style={{
+            position: 'absolute', top: '50%', [side]: 20,
+            transform: 'translateY(-50%)',
+            width: 40, height: 40, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.3)',
+            color: '#fff', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backdropFilter: 'blur(4px)', zIndex: 10, transition: 'background 0.2s',
+          }}>
+            <Icon size={20} />
+          </button>
+        ))}
+
+        {/* Dots */}
+        <div style={{ position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 7, zIndex: 10 }}>
+          {BANNERS.map((_, i) => (
+            <button key={i} onClick={() => { clearInterval(bannerTimer.current); setBannerIdx(i); bannerTimer.current = setInterval(() => advanceBanner(1), 5000); }} style={{
+              width: i === bannerIdx ? 22 : 8, height: 8, borderRadius: 4,
+              background: i === bannerIdx ? '#fff' : 'rgba(255,255,255,0.45)',
+              border: 'none', cursor: 'pointer', transition: 'all 0.3s',
+            }} />
+          ))}
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 relative flex flex-col items-center">
-          <div className="flex flex-col items-center text-center max-w-3xl" style={{margin: '0 auto'}}>
-            <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-5">
-              Find The Best{' '}
-              <span className="relative">
-                <span className="text-yellow-300">Local Businesses</span>
-                <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none">
-                  <path d="M1 8C50 3 100 3 150 6C200 9 250 9 299 6" stroke="#FCD34D" strokeWidth="3" strokeLinecap="round"/>
-                </svg>
-              </span>
-              {' '}Near You
-            </h1>
-            <p className="text-blue-100 text-lg md:text-xl mb-10 leading-relaxed">
-              Discover 700+ verified businesses across 8+ categories.
-              From marketing agencies to IT solutions — all in one place.
-            </p>
+        {/* Hero content */}
+        <div style={{ position: 'relative', zIndex: 5, maxWidth: 1280, margin: '0 auto', padding: '80px 24px 100px', textAlign: 'center' }}>
+          <h1 style={{
+            fontSize: 'clamp(28px,5vw,56px)', fontWeight: 900, color: '#fff',
+            lineHeight: 1.15, marginBottom: 16,
+            animation: 'fadeUp 0.5s ease both',
+          }}>
+            {banner.title}
+          </h1>
+          <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.82)', marginBottom: 40, animation: 'fadeUp 0.6s ease both' }}>
+            {banner.sub}
+          </p>
 
-            {/* Hero Search */}
-            <div ref={searchRef} className="relative">
-              <form onSubmit={handleSearch}>
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-2 flex flex-col sm:flex-row gap-2 shadow-2xl">
-                  <div className="flex-1 relative">
-                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Search businesses, services, categories..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-white text-slate-900 pl-11 pr-4 py-3.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    />
-                  </div>
-                  <div className="relative sm:w-44">
-                    <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="City / Location"
-                      value={searchCity}
-                      onChange={(e) => setSearchCity(e.target.value)}
-                      className="w-full bg-white text-slate-900 pl-10 pr-4 py-3.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="bg-yellow-400 hover:bg-yellow-300 text-slate-900 px-8 py-3.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 justify-center shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/40 hover:scale-105"
-                  >
-                    <Search size={16} /> Search
-                  </button>
-                </div>
-              </form>
+          {/* Search form */}
+          <form onSubmit={handleSearch} ref={searchRef} style={{ animation: 'fadeUp 0.7s ease both' }}>
+            <div style={{
+              display: 'flex', flexWrap: 'wrap', gap: 8,
+              background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)',
+              border: '1.5px solid rgba(255,255,255,0.25)',
+              borderRadius: 18, padding: 8, maxWidth: 780, margin: '0 auto',
+            }}>
+              {/* Query */}
+              <div style={{ flex: '1 1 200px', position: 'relative', minWidth: 0 }}>
+                <Search size={16} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: '#888' }} />
+                <input
+                  type="text"
+                  placeholder="Search businesses, services..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%', paddingLeft: 38, paddingRight: 12, paddingTop: 12, paddingBottom: 12,
+                    fontSize: 14, border: 'none', borderRadius: 12, outline: 'none',
+                    background: '#fff', color: '#111', fontFamily: 'inherit',
+                  }}
+                />
+              </div>
+              {/* City + pincode */}
+              <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 12, padding: '0 12px' }}>
+                <MapPin size={14} style={{ color: '#888', flexShrink: 0 }} />
+                <input
+                  type="text"
+                  placeholder="City"
+                  value={searchCity}
+                  onChange={e => setSearchCity(e.target.value)}
+                  style={{ width: 90, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', color: '#111', fontFamily: 'inherit' }}
+                />
+                <div style={{ width: 1, height: 16, background: '#ddd' }} />
+                <input
+                  type="text"
+                  placeholder="Pincode"
+                  value={pincode}
+                  onChange={(e) =>handlePincodeChange(e.target.value)}
+                  style={{ width: 72, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', color: '#111', fontFamily: 'inherit' }}
 
-              {/* Suggestions Dropdown */}
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-slate-100 z-20 overflow-hidden">
-                  {suggestions.map((s, i) => (
-                    <button
-                      key={i}
-                      onClick={() => { setSearchQuery(s); setShowSuggestions(false); }}
-                      className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2 transition-colors border-b border-slate-50 last:border-0"
-                    >
-                      <Search size={13} className="text-slate-400" /> {s}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Popular tags */}
-            <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
-              <span className="text-blue-200 text-xs">Trending:</span>
-              {['SEO Services', 'Web Development', 'Branding', 'Social Media'].map(tag => (
+                />
                 <button
-                  key={tag}
-                  onClick={() => navigate(`/search?query=${encodeURIComponent(tag)}`)}
-                  className="text-xs bg-white/10 hover:bg-white/20 text-white border border-white/20 px-3 py-1.5 rounded-full transition-colors"
+                  type="button"
+                  onClick={handleDetectLocation}
+                  disabled={locLoading}
+                  title="Detect my location"
+                  style={{width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #DDDDDD', background: '#fff', cursor: locLoading ? 'not-allowed' : 'pointer', opacity: locLoading ? 0.7 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: locLoading ? '#1a56db' : '#555',
+                    flexShrink: 0,
+                    transition: 'color 0.2s',
+                  }}
                 >
-                  {tag}
+                  <Locate size={13} style={{animation: locLoading ? 'spin 1s linear infinite' : 'none'}}/>
                 </button>
-              ))}
+              </div>
+              <button
+                type="submit"
+                style={{
+                  padding: '12px 28px', background: '#1a56db', color: '#fff',
+                  border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 15,
+                  cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+                  transition: 'background 0.2s, transform 0.15s',
+                  display: 'flex', alignItems: 'center', gap: 7,
+                }}
+
+                onMouseEnter={e => e.currentTarget.style.background = '#1648c0'}
+                onMouseLeave={e => e.currentTarget.style.background = '#1a56db'}
+                disabled={loadingPincode}
+              >
+                  
+                <Search size={16} /> {loadingPincode ? 'Finding City...': 'Search'}
+              </button>
             </div>
+          </form>
+
+          {/* Trending tags */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20 }}>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>Trending:</span>
+            {['Restaurants', 'Gyms', 'Hospitals', 'Beauty Spa', 'Education'].map(tag => (
+              <button key={tag} onClick={() => navigate(`/search?query=${encodeURIComponent(tag)}`)}
+                style={{
+                  fontSize: 12, background: 'rgba(255,255,255,0.15)', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.3)', padding: '5px 14px',
+                  borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.2s',
+                }}>
+                {tag}
+              </button>
+            ))}
           </div>
         </div>
+      </section>
 
-        {/* Stats strip */}
-        <div className="max-w-7xl mx-auto px-4 mt-16">
-          <div className="flex flex-wrap justify-center gap-8">
-            <StatCard icon={Building2} value="700+" label="Businesses" color="bg-white/20" />
-            <StatCard icon={BadgeCheck} value="500+" label="Verified" color="bg-white/20" />
-            <StatCard icon={Users} value="10K+" label="Monthly Users" color="bg-white/20" />
-            <StatCard icon={Star} value="4.8★" label="Avg Rating" color="bg-white/20" />
-          </div>
+      {/* ══════════ STATS STRIP ══════════ */}
+      <section style={{ background: '#1a56db', padding: '20px 24px' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px 60px' }}>
+          {[
+            { icon: Building2, value: '700+',  label: 'Businesses'   },
+            { icon: BadgeCheck,value: '500+',  label: 'Verified'     },
+            { icon: Users,     value: '10K+',  label: 'Monthly Users'},
+            { icon: Star,      value: '4.8★',  label: 'Avg Rating'   },
+          ].map(({ icon: Icon, value, label }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Icon size={22} color="rgba(255,255,255,0.7)" />
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>{value}</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>{label}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -388,7 +711,7 @@ const HomePage = () => {
             {loading
               ? Array.from({ length: 6 }).map((_, i) => <BusinessCardSkeleton key={i} />)
               : displayedBusinesses.map(biz => (
-                  <BusinessCard key={biz.id} business={biz} featured={biz.featured} />
+                  <BusinessCard key={biz._id} business={biz} featured={biz.featured} />
                 ))
             }
           </div>

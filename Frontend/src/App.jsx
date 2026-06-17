@@ -32,7 +32,7 @@ const ProtectedRoute = ({ children }) => {
       <div className="w-10 h-10 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
     </div>
   );
-  return user?.role === 'admin' ? children : <Navigate to="/admin/login" replace />;
+  return user?.role === 'admin' ? children : <Navigate to="/login" replace />;
 };
 
 // User Protected Route
@@ -69,7 +69,7 @@ function AppRoutes() {
       <Route path="/category/:categorySlug" element={<PublicLayout><CategoryBrowse /></PublicLayout>} />
       <Route path="/category/:categorySlug/:subcategorySlug" element={<PublicLayout><CategoryBrowse /></PublicLayout>} />
       <Route path="/business/:id" element={<PublicLayout><BusinessDetails /></PublicLayout>} />
-      <Route path="/apply" element={<PublicLayout><ApplyListing /></PublicLayout>} />
+      <Route path="/apply" element={<PublicLayout><UserProtectedRoute><ApplyListing /></UserProtectedRoute></PublicLayout>}/>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
 

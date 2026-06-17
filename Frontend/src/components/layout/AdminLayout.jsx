@@ -21,11 +21,17 @@ const AdminLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    toast.success('Logged out successfully');
-    navigate('/admin/login');
-  };
+const handleLogout = () => {
+  logout();
+
+  toast.success(
+    'Logged out successfully'
+  );
+
+  navigate(
+    '/login'
+  );
+};
 
   const pageName = navItems.find(n => location.pathname === n.to)?.label || 'Admin';
 

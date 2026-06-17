@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { X, Send, User, Phone, Mail, MessageSquare, Briefcase, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { createLead } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const LeadFormModal = ({ business, isOpen, onClose }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [form, setForm] = useState({ name: '', phone: '', email: '', serviceRequired: '', message: '' });
   const [loading, setLoading] = useState(false);
@@ -28,37 +31,56 @@ const LeadFormModal = ({ business, isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) {
+
+      toast.error('Please login first');
+
+      onClose();
+
+      navigate('/login');
+
+      return;
+    }
+    
     if (!form.name || !form.phone || !form.email) {
       toast.error('Please fill all required fields');
       return;
     }
+
     setLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1200));
 
-    // Save lead to local storage (MongoDB schema aligned)
-    const newLead = {
-      id: 'lead-' + Date.now().toString(36),
-      businessId: business?.id,
-      businessName: business?.businessName,
-      customerName: form.name, // compatibility with admin
-      phone: form.phone.replace(/\D/g, ''),
-      email: form.email,
-      serviceRequired: form.serviceRequired || 'General Consultation',
-      message: form.message,
-      createdAt: new Date().toISOString()
-    };
+    try {
+      await createLead({
+        businessId: business?.id,
+        businessName: business?.businessName,
+        customerName: form.name,
+        phone: form.phone,
+        email: form.email,
+        serviceRequired: form.serviceRequired || 'General Consultation',
+        message: form.message
+      });
 
-    const allLeads = JSON.parse(localStorage.getItem('user_leads') || '[]');
-    allLeads.unshift(newLead);
-    localStorage.setItem('user_leads', JSON.stringify(allLeads));
+      setSubmitted(true);
+      toast.success('Quote request sent successfully!');
+    } 
+    catch (err) {
+      // console.error(err);
+      if (err.response?.status === 401) {
 
-    setLoading(false);
-    setSubmitted(true);
-    toast.success('Quote request sent successfully!');
+        toast.error('Please login to contact this business');
+        onClose();
+
+        navigate('/login');
+
+        return;
+      }
+      toast.error('Failed to send request');
+    }
+    finally {
+      setLoading(false);
+    }
   };
-
+    
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />

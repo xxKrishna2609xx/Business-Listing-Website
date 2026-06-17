@@ -5,7 +5,11 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { dashboardStats, businesses, applications, leads } from '../../data/mockData';
+import {
+  getBusinesses,
+  getApplications,
+  getLeads
+} from '../../services/api';
 
 const StatCard = ({ icon: Icon, label, value, change, color, to }) => (
   <Link to={to || '#'} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all duration-200 group">
@@ -22,26 +26,123 @@ const StatCard = ({ icon: Icon, label, value, change, color, to }) => (
         <TrendingUp size={11} /> {change}
       </div>
     )}
-  </Link>
+  </Link> 
 );
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
+  const [businesses, setBusinesses] = useState([]);
+
+  const [applications, setApplications] = useState([]);
+
+  const [leads, setLeads] = useState([]);
+
   useEffect(() => {
-    setTimeout(() => setLoading(false), 800);
+
+    const loadDashboard =
+      async () => {
+
+        try {
+
+          const [
+            businessData,
+            applicationData,
+            leadData
+          ] = await Promise.all([
+            getBusinesses(),
+            getApplications(),
+            getLeads()
+          ]);
+
+          setBusinesses(
+            businessData
+          );
+
+          setApplications(
+            applicationData
+          );
+
+          setLeads(
+            leadData
+          );
+
+        } catch (err) {
+
+          console.error(err);
+
+        } finally {
+
+          setLoading(false);
+
+        }
+      };
+
+    loadDashboard();
+
   }, []);
 
   const recentApps = applications.slice(0, 3);
   const recentLeads = leads.slice(0, 3);
 
   const stats = [
-    { icon: Building2, label: 'Total Listings', value: dashboardStats.totalListings, color: 'bg-blue-600', change: '+12 this month', to: '/admin/listings' },
-    { icon: Clock, label: 'Pending Applications', value: dashboardStats.pendingApplications, color: 'bg-amber-500', change: 'Needs review', to: '/admin/applications' },
-    { icon: CheckCircle, label: 'Approved Listings', value: dashboardStats.approvedListings, color: 'bg-teal-600', change: '+8 this week', to: '/admin/listings' },
-    { icon: XCircle, label: 'Rejected', value: dashboardStats.rejectedListings, color: 'bg-red-500', to: '/admin/applications' },
-    { icon: Sparkles, label: 'Featured Listings', value: dashboardStats.featuredListings, color: 'bg-indigo-600', to: '/admin/listings' },
-    { icon: MessageSquare, label: 'Total Leads', value: dashboardStats.totalLeads, color: 'bg-rose-500', change: '+5 today', to: '/admin/leads' },
+
+    {
+      icon: Building2,
+      label: 'Total Listings',
+      value: businesses.length,
+      color: 'bg-blue-600',
+      to: '/admin/listings'
+    },
+
+    {
+      icon: Clock,
+      label: 'Pending Applications',
+      value: applications.filter(
+        a => a.status === 'PENDING'
+      ).length,
+      color: 'bg-amber-500',
+      to: '/admin/applications'
+    },
+
+    {
+      icon: CheckCircle,
+      label: 'Approved Listings',
+      value: businesses.filter(
+        b => b.status === 'APPROVED'
+      ).length,
+      color: 'bg-teal-600',
+      to: '/admin/listings'
+    },
+
+    {
+      icon: XCircle,
+      label: 'Rejected',
+      value: applications.filter(
+        a => a.status === 'REJECTED'
+      ).length,
+      color: 'bg-red-500',
+      to: '/admin/applications'
+    },
+
+    {
+      icon: Sparkles,
+      label: 'Featured Listings',
+      value: businesses.filter(
+        b => b.featured
+      ).length,
+      color: 'bg-indigo-600',
+      to: '/admin/listings'
+    },
+
+    {
+      icon: MessageSquare,
+      label: 'Total Leads',
+      value: leads.length,
+      color: 'bg-rose-500',
+      to: '/admin/leads'
+    }
+
   ];
 
   if (loading) {
@@ -64,21 +165,28 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+ 
         {/* Recent Applications */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm max-h-[350px] overflow-y-auto space-y-2 pr-2 pl-2 pb-2">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50">
             <h3 className="font-bold text-slate-900">Recent Applications</h3>
             <Link to="/admin/applications" className="text-xs text-blue-600 font-semibold hover:underline">View all</Link>
           </div>
-          <div className="divide-y divide-slate-50">
+          <div className="flex flex-col items-center justify-between gap-3 ">
             {recentApps.map(app => (
-              <div key={app.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors">
+              <div key={app._id} className="w-full bg-white flex items-center justify-between px-5 py-4 border border-gray-200 rounded-xl hover:bg-slate-100 transition-all duration-200">
                 <div>
                   <div className="font-semibold text-slate-900 text-sm">{app.businessName}</div>
                   <div className="text-xs text-slate-500 mt-0.5">{app.city}, {app.state}</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
+                      app.status === 'APPROVED'
+                        ? 'bg-green-50 text-green-700 border-green-200'
+                        : app.status === 'REJECTED'
+                        ? 'bg-red-50 text-red-700 border-red-200'
+                        : 'bg-amber-50 text-amber-700 border-amber-200'
+                    }`}>
                     {app.status}
                   </span>
                 </div>
@@ -91,14 +199,14 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Leads */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm max-h-[350px] overflow-y-auto space-y-2 pr-2 pl-2">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50">
             <h3 className="font-bold text-slate-900">Recent Leads</h3>
             <Link to="/admin/leads" className="text-xs text-blue-600 font-semibold hover:underline">View all</Link>
           </div>
           <div className="divide-y divide-slate-50">
             {recentLeads.map(lead => (
-              <div key={lead.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors">
+              <div key={lead._id} className="flex items-center justify-between px-5 py-3.5 hover:bg-slate-100 transition-colors">
                 <div>
                   <div className="font-semibold text-slate-900 text-sm">{lead.customerName}</div>
                   <div className="text-xs text-slate-500 mt-0.5">{lead.serviceRequired} • {lead.businessName}</div>
@@ -112,7 +220,7 @@ const Dashboard = () => {
         </div>
 
         {/* Top Rated Businesses */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden lg:col-span-2">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm max-h-[300px] overflow-y-auto space-y-2 pr-2 lg:col-span-2">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50">
             <h3 className="font-bold text-slate-900">Top Rated Businesses</h3>
             <Link to="/admin/listings" className="text-xs text-blue-600 font-semibold hover:underline">Manage all</Link>
@@ -130,7 +238,7 @@ const Dashboard = () => {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {businesses.slice(0, 4).map(biz => (
-                  <tr key={biz.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={biz._id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2.5">
                         <img src={biz.logoUrl} alt={biz.businessName} className="w-8 h-8 rounded-lg" />

@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Eye, Trash2, MessageSquare, Mail, Phone } from 'lucide-react';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { leads as initialLeads } from '../../data/mockData';
+import {
+  getLeads,
+  deleteLead as deleteLeadApi
+} from '../../services/api';
 import toast from 'react-hot-toast';
 
 const ManageLeads = () => {
-  const [leads, setLeads] = useState(() => {
-    const localLeads = JSON.parse(localStorage.getItem('user_leads') || '[]');
-    return [...localLeads, ...initialLeads];
-  });
+  const [leads, setLeads] = useState([]);
   const [search, setSearch] = useState('');
   const [viewLead, setViewLead] = useState(null);
 
@@ -17,18 +17,60 @@ const ManageLeads = () => {
     l.businessName.toLowerCase().includes(search.toLowerCase()) ||
     l.serviceRequired.toLowerCase().includes(search.toLowerCase())
   );
+  useEffect(() => {
 
-  const deleteLead = (id) => {
-    if (window.confirm('Delete this lead?')) {
-      const updated = leads.filter(l => l.id !== id);
-      setLeads(updated);
-      
-      // Update local storage
-      const userLeads = JSON.parse(localStorage.getItem('user_leads') || '[]');
-      const filteredUserLeads = userLeads.filter(l => l.id !== id);
-      localStorage.setItem('user_leads', JSON.stringify(filteredUserLeads));
+    const loadLeads = async () => {
 
-      toast.success('Lead deleted');
+      try {
+
+        const data =
+          await getLeads();
+
+        setLeads(data);
+
+      } catch (err) {
+
+        console.error(err);
+
+        toast.error(
+          'Failed to load leads'
+        );
+      }
+    };
+
+    loadLeads();
+
+  }, []);
+
+  const deleteLead = async (id) => {
+
+    if (
+      !window.confirm(
+        'Delete this lead?'
+      )
+    ) return;
+
+    try {
+
+      await deleteLeadApi(id);
+
+      setLeads(
+        leads.filter(
+          l => l._id !== id
+        )
+      );
+
+      toast.success(
+        'Lead deleted'
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      toast.error(
+        'Delete failed'
+      );
     }
   };
 
@@ -64,7 +106,7 @@ const ManageLeads = () => {
           </div>
         ) : (
           filtered.map(lead => (
-            <div key={lead.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 hover:shadow-md transition-all">
+            <div key={lead._id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-all">
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="font-bold text-slate-900">{lead.customerName}</h3>

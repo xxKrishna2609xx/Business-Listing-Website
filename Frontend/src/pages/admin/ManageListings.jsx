@@ -1,12 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, BadgeCheck, Sparkles, Trash2, Edit2, Star, Eye, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { businesses as initialBusinesses } from '../../data/mockData';
+// import { businesses as initialBusinesses } from '../../data/mockData';
+
+import {
+  deleteBusiness,
+  toggleBusinessVerified,
+  toggleBusinessFeatured,
+  getBusinesses
+} from '../../services/api';
 import toast from 'react-hot-toast';
 
 const ManageListings = () => {
-  const [listings, setListings] = useState(initialBusinesses);
+  const [listings, setListings] = useState([]);
   const [search, setSearch] = useState('');
   const [filterFeatured, setFilterFeatured] = useState('ALL');
 
@@ -19,21 +26,111 @@ const ManageListings = () => {
       (filterFeatured === 'VERIFIED' && b.verified);
     return matchSearch && matchFeatured;
   });
+  useEffect(() => {
 
-  const toggleVerified = (id) => {
-    setListings(prev => prev.map(b => b.id === id ? { ...b, verified: !b.verified } : b));
-    toast.success('Verification status updated');
+    const loadBusinesses = async () => {
+
+      try {
+
+        const data =
+          await getBusinesses();
+
+        setListings(data);
+
+      } catch (err) {
+
+        console.error(err);
+
+        toast.error(
+          'Failed to load businesses'
+        );
+      }
+    };
+
+    loadBusinesses();
+
+  }, []);
+
+  const toggleVerified = async (id) => {
+
+    try {
+
+      await toggleBusinessVerified(id);
+
+      const data =
+        await getBusinesses();
+
+      setListings(data);
+
+      toast.success(
+        'Verification status updated'
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      toast.error(
+        'Update failed'
+      );
+    }
   };
 
-  const toggleFeatured = (id) => {
-    setListings(prev => prev.map(b => b.id === id ? { ...b, featured: !b.featured } : b));
-    toast.success('Featured status updated');
+  const toggleFeatured = async (id) => {
+
+    try {
+
+      await toggleBusinessFeatured(id);
+
+      const data =
+        await getBusinesses();
+
+      setListings(data);
+
+      toast.success(
+        'Featured status updated'
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      toast.error(
+        'Update failed'
+      );
+    }
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Delete this listing permanently?')) {
-      setListings(prev => prev.filter(b => b.id !== id));
-      toast.success('Listing deleted');
+  const handleDelete = async (id) => {
+
+    if (
+      !window.confirm(
+        'Delete this listing permanently?'
+      )
+    ) return;
+
+    try {
+
+      await deleteBusiness(id);
+
+      setListings(
+        prev =>
+          prev.filter(
+            b => b._id !== id
+          )
+      );
+
+      toast.success(
+        'Listing deleted'
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      toast.error(
+        'Delete failed'
+      );
     }
   };
 
@@ -87,10 +184,10 @@ const ManageListings = () => {
                 </tr>
               ) : (
                 filtered.map(biz => (
-                  <tr key={biz.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={biz._id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <img src={biz.logoUrl} alt={biz.businessName} className="w-9 h-9 rounded-xl object-cover" />
+                        <img src={biz.logoUrl || "/default-logo.jpg"} alt={biz.businessName} className="w-9 h-9 rounded-xl object-cover" />
                         <span className="font-semibold text-slate-800 text-sm">{biz.businessName}</span>
                       </div>
                     </td>
@@ -104,7 +201,7 @@ const ManageListings = () => {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => toggleVerified(biz.id)}
+                        onClick={() => toggleVerified(biz._id)}
                         className={`text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
                           biz.verified
                             ? 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100'
@@ -116,7 +213,7 @@ const ManageListings = () => {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => toggleFeatured(biz.id)}
+                        onClick={() => toggleFeatured(biz._id)}
                         className={`text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
                           biz.featured
                             ? 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'
@@ -129,7 +226,7 @@ const ManageListings = () => {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         <Link
-                          to={`/business/${biz.id}`}
+                          to={`/business/${biz._id}`}
                           target="_blank"
                           className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="View on site"
@@ -137,7 +234,7 @@ const ManageListings = () => {
                           <Eye size={15} />
                         </Link>
                         <button
-                          onClick={() => handleDelete(biz.id)}
+                          onClick={() => handleDelete(biz._id)}
                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                         >

@@ -3,87 +3,122 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Search, MapPin, Filter, ChevronDown, SlidersHorizontal, X, Building2 } from 'lucide-react';
 import BusinessCard from '../../components/business/BusinessCard';
 import { BusinessCardSkeleton } from '../../components/common/Skeletons';
-import { businesses, categories } from '../../data/mockData';
+import { searchBusinesses } from '../../services/api';
+import { getCategories, getBusinesses } from '../../services/api';
 
 const SearchResults = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState([]);
-  const [query, setQuery] = useState(searchParams.get('query') || '');
-  const [city, setCity] = useState(searchParams.get('city') || '');
+  const [availableBrands, setAvailableBrands] = useState([]);
+
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
+  
+
   const [sortBy, setSortBy] = useState('rating');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState('');
+
+  const [categories, setCategories] = useState([]);
+
+  const [query, setQuery] = useState('');
+  const [city, setCity] = useState('');
+
+
+  const searchQuery = searchParams.get('query') || '';
+  const searchCity = searchParams.get('city') || '';
+  const searchPincode =searchParams.get('pincode') || '';
 
   // Reset selected brand when query or category changes
   useEffect(() => {
     setSelectedBrand('');
   }, [query, selectedCategory]);
-
-  // Compute unique brands present in the listings matching the category & search query (ignoring brand selection)
-  const availableBrands = (() => {
-    let baseFiltered = businesses.filter(b => b.status === 'APPROVED');
-    if (query) {
-      baseFiltered = baseFiltered.filter(b =>
-        b.businessName.toLowerCase().includes(query.toLowerCase()) ||
-        b.description.toLowerCase().includes(query.toLowerCase()) ||
-        b.services?.some(s => s.toLowerCase().includes(query.toLowerCase())) ||
-        b.categoryName.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-    if (city) {
-      baseFiltered = baseFiltered.filter(b => b.city.toLowerCase().includes(city.toLowerCase()));
-    }
-    if (selectedCategory) {
-      baseFiltered = baseFiltered.filter(b => b.categoryId === selectedCategory);
-    }
-    // Extract unique brands
-    const brandsSet = new Set();
-    baseFiltered.forEach(b => {
-      if (b.brands) {
-        b.brands.forEach(br => brandsSet.add(br));
-      }
-    });
-    return [...brandsSet];
-  })();
-
+  
   useEffect(() => {
-    setLoading(true);
-    const timer = setTimeout(() => {
-      let filtered = businesses.filter(b => b.status === 'APPROVED');
+    const loadCategories = async () => {
 
-      if (query) {
-        filtered = filtered.filter(b =>
-          b.businessName.toLowerCase().includes(query.toLowerCase()) ||
-          b.description.toLowerCase().includes(query.toLowerCase()) ||
-          b.services?.some(s => s.toLowerCase().includes(query.toLowerCase())) ||
-          b.categoryName.toLowerCase().includes(query.toLowerCase())
+      try {
+
+        const data =
+          await getCategories();
+
+        setCategories(data);
+
+      } catch (err) {
+
+        console.error(
+          'Failed to load categories',
+          err
         );
       }
-      if (city) {
-        filtered = filtered.filter(b => b.city.toLowerCase().includes(city.toLowerCase()));
-      }
-      if (selectedCategory) {
-        filtered = filtered.filter(b => b.categoryId === selectedCategory);
-      }
-      if (selectedBrand) {
-        filtered = filtered.filter(b => b.brands?.includes(selectedBrand));
-      }
+    };
 
-      if (sortBy === 'rating') filtered.sort((a, b) => b.rating - a.rating);
-      else if (sortBy === 'reviews') filtered.sort((a, b) => b.reviewCount - a.reviewCount);
-      else if (sortBy === 'latest') filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    loadCategories();
 
-      setResults(filtered);
-      setLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [query, city, selectedCategory, selectedBrand, sortBy, searchParams]);
+  }, []);
+  useEffect(() => {
+    setQuery(
+      searchParams.get('query') || ''
+    );
+
+    setCity(
+      searchParams.get('city') || ''
+    );
+
+  }, [searchParams]);
+
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      setLoading(true);
+      // console.log({
+      //   searchQuery,
+      //   searchCity,
+      //   searchPincode
+      // });
+      try {
+        const data = await searchBusinesses(searchQuery,searchCity,searchPincode);
+        // console.log("API DATA", data);
+        let filtered = data.filter(b => b.status === 'APPROVED');
+        if (selectedCategory) {
+          filtered = filtered.filter(b => b.categoryId === selectedCategory);
+        }
+        
+        // Extract brands
+        const brandsSet = new Set();
+        filtered.forEach(b => {
+          if (b.brands) b.brands.forEach(br => brandsSet.add(br));
+        });
+        setAvailableBrands([...brandsSet]);
+        
+        if (selectedBrand) {
+          filtered = filtered.filter(b => b.brands?.includes(selectedBrand));
+        }
+
+        if (sortBy === 'rating') filtered.sort((a, b) => b.rating - a.rating);
+        else if (sortBy === 'reviews') filtered.sort((a, b) => b.reviewCount - a.reviewCount);
+        else if (sortBy === 'latest') filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        setResults(filtered);
+      } catch (error) {
+        console.error("Failed to load results", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchResults();
+  }, [searchParams, selectedCategory, selectedBrand, sortBy]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setSearchParams({ query, city });
+
+    console.log('QUERY:', query);
+    console.log('CITY:', city);
+
+    setSearchParams({
+      query,
+      city
+    });
   };
 
   const clearFilters = () => {
@@ -205,8 +240,8 @@ const SearchResults = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl font-bold text-slate-900">
-              {query ? `Results for "${query}"` : 'All Businesses'}
-              {city && <span className="text-slate-500 font-normal"> in {city}</span>}
+              {searchQuery ? `Results for "${searchQuery}"` : 'All Businesses'}
+              {searchCity  && <span className="text-slate-500 font-normal"> in {searchCity}</span>}
             </h1>
             {!loading && (
               <p className="text-sm text-slate-500 mt-0.5">

@@ -19,11 +19,12 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!email || !password) {
       toast.error('Please fill in all fields.');
       return;
     }
-
+ 
     setLoading(true);
     try {
       const user = await loginUser(email, password);
@@ -36,7 +37,14 @@ const Login = () => {
         navigate(from, { replace: true });
       }
     } catch (err) {
-      toast.error(err.message || 'Login failed. Please try again.');
+        if (err.response?.status === 401) {
+
+          toast.error('Invalid email or password');
+
+          return;
+        }
+        toast.error(err.response?.data?.detail || 'Login failed. Please try again.');
+      
     } finally {
       setLoading(false);
     }
