@@ -1,20 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Building2, ChevronRight } from 'lucide-react';
+import { Building2, ChevronRight, SlidersHorizontal } from 'lucide-react';
 import BusinessCard from '../../components/business/BusinessCard';
 import { BusinessCardSkeleton } from '../../components/common/Skeletons';
-<<<<<<< HEAD
 import { searchBusinesses, getCategories, getSubcategories } from '../../services/api';
-=======
-import { businessService } from '../../services/businessService';
-import { categoryService } from '../../services/categoryService';
->>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 
 const CategoryBrowse = () => {
   const { categorySlug, subcategorySlug } = useParams();
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState([]);
-<<<<<<< HEAD
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
 
@@ -30,30 +24,12 @@ const CategoryBrowse = () => {
     };
     fetchData();
   }, []);
-=======
-  const [category, setCategory] = useState(null);
-  const [subcategory, setSubcategory] = useState(null);
-  const [catSubcategories, setCatSubcategories] = useState([]);
->>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 
-  // Load category info and subcategories
-  useEffect(() => {
-    categoryService.getCategories().then(cats => {
-      const cat = cats.find(c => c.slug === categorySlug);
-      setCategory(cat || null);
-    }).catch(() => {});
-
-    categoryService.getSubcategories(categorySlug).then(subs => {
-      setCatSubcategories(subs);
-      if (subcategorySlug) {
-        const sub = subs.find(s => s.slug === subcategorySlug);
-        setSubcategory(sub || null);
-      }
-    }).catch(() => {});
-  }, [categorySlug, subcategorySlug]);
+  const category = categories.find(c => c.slug === categorySlug);
+  const subcategory = subcategories.find(s => s.slug === subcategorySlug);
+  const catSubcategories = subcategories.filter(s => s.categoryId === category?.id);
 
   useEffect(() => {
-<<<<<<< HEAD
     const fetchResults = async () => {
       setLoading(true);
       try {
@@ -64,29 +40,12 @@ const CategoryBrowse = () => {
         setResults(filtered);
       } catch (err) {
         console.error("Failed to load results", err);
-=======
-    setLoading(true);
-    const fetchData = async () => {
-      try {
-        const params = {};
-        if (categorySlug) params.category = categorySlug;
-        if (subcategorySlug && subcategory) params.subcategory = subcategory.id;
-        const data = await businessService.getBusinesses(params);
-        setResults(data);
-      } catch {
-        setResults([]);
->>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
       } finally {
         setLoading(false);
       }
     };
-<<<<<<< HEAD
     if (categories.length > 0) fetchResults();
   }, [categorySlug, subcategorySlug, category, subcategory, categories]);
-=======
-    fetchData();
-  }, [categorySlug, subcategorySlug, subcategory]);
->>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 
   return (
     <div className="min-h-screen bg-slate-50">

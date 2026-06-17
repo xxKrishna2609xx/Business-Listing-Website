@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Star, BadgeCheck, Phone, ExternalLink, Heart } from 'lucide-react';
+import { MapPin, Star, BadgeCheck, Sparkles, Phone, ExternalLink, Heart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -10,51 +10,47 @@ const BusinessCard = ({ business, featured = false }) => {
   const { user, isLoggedIn, toggleBookmark } = useAuth();
   const isBookmarked = user?.bookmarks?.includes(id) || false;
 
-  const handleBookmark = (e) => {
-    e.preventDefault(); e.stopPropagation();
-    if (!isLoggedIn) { toast.error('Please sign in to save listings.'); return; }
+  const handleBookmarkToggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isLoggedIn) {
+      toast.error('Please sign in to save listings.');
+      return;
+    }
     toggleBookmark(id);
     toast.success(isBookmarked ? 'Removed from bookmarks' : 'Saved to bookmarks');
   };
 
   return (
-    <div style={{
-      background: '#fff',
-      border: featured ? '1.5px solid #bfdbfe' : '1.5px solid #EBEBEB',
-      borderRadius: 18,
-      overflow: 'hidden',
-      boxShadow: featured ? '0 4px 20px rgba(26,86,219,0.08)' : '0 1px 6px rgba(0,0,0,0.04)',
-      transition: 'transform 0.25s ease, box-shadow 0.25s ease',
-      position: 'relative',
-    }}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(26,86,219,0.12)'; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = featured ? '0 4px 20px rgba(26,86,219,0.08)' : '0 1px 6px rgba(0,0,0,0.04)'; }}
-    >
-      {/* Bookmark */}
-      <button onClick={handleBookmark} style={{
-        position: 'absolute', right: 12, top: featured ? 44 : 12, zIndex: 10,
-        width: 32, height: 32, borderRadius: 10,
-        background: 'rgba(255,255,255,0.9)', border: '1px solid #EBEBEB',
-        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        transition: 'background 0.2s',
-      }}>
-        <Heart size={14} style={{ color: isBookmarked ? '#e02020' : '#aaa', fill: isBookmarked ? '#e02020' : 'none', transition: 'all 0.2s' }} />
+    <div className={`bg-white rounded-2xl border overflow-hidden card-hover group relative ${
+      featured ? 'border-blue-200 shadow-blue-50 shadow-lg' : 'border-slate-100 shadow-sm'
+    }`}>
+      {/* Bookmark Button */}
+      <button
+        onClick={handleBookmarkToggle}
+        className={`absolute right-3 ${featured ? 'top-10' : 'top-3'} z-10 p-2 bg-white/80 hover:bg-white backdrop-blur-sm rounded-xl border border-slate-100/50 shadow-sm transition-all duration-200 hover:scale-105 group/btn cursor-pointer`}
+        title={isBookmarked ? 'Remove from Bookmarks' : 'Save Listing'}
+      >
+        <Heart
+          size={15}
+          className={`transition-all duration-200 ${
+            isBookmarked
+              ? 'fill-red-500 text-red-500 scale-110'
+              : 'text-slate-400 group-hover/btn:text-red-500'
+          }`}
+        />
       </button>
 
-      {/* Featured banner */}
+      {/* Featured Badge */}
       {featured && (
-        <div style={{
-          background: 'linear-gradient(90deg,#1a56db,#1d4ed8)',
-          padding: '7px 16px', display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#06b6d4', flexShrink: 0 }} />
-          <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em' }}>FEATURED</span>
+        <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-3 py-1.5 flex items-center gap-1.5">
+          <Sparkles size={12} className="text-yellow-300" />
+          <span className="text-white text-xs font-semibold tracking-wide">FEATURED</span>
         </div>
       )}
 
-      <div style={{ padding: '18px 18px 16px' }}>
+      <div className="p-5">
         {/* Header */}
-<<<<<<< HEAD
         <div className="flex items-start gap-3 mb-3">
           <div className="relative flex-shrink-0">
             <img
@@ -72,95 +68,72 @@ const BusinessCard = ({ business, featured = false }) => {
                     businessName
                   )}&background=2563eb&color=fff&size=64&rounded=false`;
               }}
-=======
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <img src={logoUrl} alt={businessName}
-              style={{ width: 52, height: 52, borderRadius: 12, objectFit: 'cover', border: '1.5px solid #EBEBEB' }}
-              onError={e => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(businessName)}&background=1a56db&color=fff&size=64`; }}
->>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
             />
             {verified && (
-              <div style={{ position: 'absolute', bottom: -3, right: -3, background: '#06b6d4', borderRadius: '50%', padding: 2 }}>
-                <BadgeCheck size={11} color="#fff" />
+              <div className="absolute -bottom-1 -right-1 bg-teal-500 rounded-full p-0.5 shadow-sm">
+                <BadgeCheck size={12} className="text-white fill-white" />
               </div>
             )}
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{ fontWeight: 800, color: '#111', fontSize: 15, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-slate-900 text-base leading-tight truncate group-hover:text-blue-600 transition-colors">
               {businessName}
             </h3>
-            <span style={{
-              display: 'inline-block', marginTop: 4,
-              fontSize: 11, fontWeight: 600, color: '#1a56db',
-              background: '#eff6ff', padding: '2px 10px', borderRadius: 20,
-            }}>
-              {subcategoryName || categoryName}
-            </span>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-xs text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
+                {subcategoryName || categoryName}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Description */}
-        <p style={{ fontSize: 13, color: '#717171', lineHeight: 1.55, marginBottom: 10,
-          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <p className="text-xs text-slate-500 line-clamp-2 mb-3 leading-relaxed">
           {description}
         </p>
 
-        {/* Brands */}
-        {brands?.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
-            {brands.slice(0, 3).map((b, i) => (
-              <span key={i} style={{ fontSize: 10, fontWeight: 700, border: '1px solid #EBEBEB', borderRadius: 6, padding: '2px 7px', color: '#555' }}>{b}</span>
+        {/* Brands Serviced */}
+        {brands && brands.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {brands.slice(0, 3).map((brand, i) => (
+              <span key={i} className="text-[10px] font-bold bg-slate-50 border border-slate-200 text-slate-500 px-1.5 py-0.5 rounded-lg">
+                {brand}
+              </span>
             ))}
-            {brands.length > 3 && <span style={{ fontSize: 10, color: '#aaa', alignSelf: 'center' }}>+{brands.length - 3}</span>}
+            {brands.length > 3 && (
+              <span className="text-[10px] font-semibold text-slate-400 self-center ml-1">
+                +{brands.length - 3} more
+              </span>
+            )}
           </div>
         )}
 
         {/* Meta */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#717171' }}>
-            <MapPin size={12} style={{ color: '#1a56db' }} />
-            {city}, {state}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-1 text-xs text-slate-500">
+            <MapPin size={12} className="text-blue-400" />
+            <span>{city}, {state}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Star size={12} style={{ color: '#f59e0b', fill: '#f59e0b' }} />
-            <span style={{ fontSize: 12, fontWeight: 800, color: '#111' }}>{rating}</span>
-            <span style={{ fontSize: 11, color: '#aaa' }}>({reviewCount})</span>
+          <div className="flex items-center gap-1">
+            <Star size={12} className="text-amber-400 fill-amber-400" />
+            <span className="text-xs font-bold text-slate-800">{rating}</span>
+            <span className="text-xs text-slate-400">({reviewCount})</span>
           </div>
         </div>
 
-<<<<<<< HEAD
         {/* CTA Row */}
         <div className="flex gap-2">
           <Link
             to={`/business/${business._id}`}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1"
-=======
-        {/* CTA */}
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Link to={`/business/${id}`} style={{
-            flex: 1, background: '#1a56db', color: '#fff',
-            textAlign: 'center', padding: '9px 0', borderRadius: 10,
-            fontSize: 12, fontWeight: 700, textDecoration: 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-            transition: 'background 0.2s',
-          }}
-            onMouseEnter={e => e.currentTarget.style.background = '#1648c0'}
-            onMouseLeave={e => e.currentTarget.style.background = '#1a56db'}
->>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
           >
             View Details <ExternalLink size={11} />
           </Link>
-          <a href={`tel:${phone}`} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 36, border: '1.5px solid #EBEBEB', borderRadius: 10,
-            color: '#717171', transition: 'border-color 0.2s, color 0.2s',
-            textDecoration: 'none',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#06b6d4'; e.currentTarget.style.color = '#06b6d4'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#EBEBEB'; e.currentTarget.style.color = '#717171'; }}
+          <a
+            href={`tel:${phone}`}
+            className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 hover:border-teal-400 hover:text-teal-600 rounded-xl text-xs font-medium transition-colors"
           >
-            <Phone size={13} />
+            <Phone size={12} />
           </a>
         </div>
       </div>

@@ -1,14 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Search, Eye, Trash2, MessageSquare, Mail, Phone } from 'lucide-react';
 import AdminLayout from '../../components/layout/AdminLayout';
-<<<<<<< HEAD
 import {
   getLeads,
   deleteLead as deleteLeadApi
 } from '../../services/api';
-=======
-import { adminService } from '../../services/adminService';
->>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
 import toast from 'react-hot-toast';
 
 const ManageLeads = () => {
@@ -16,20 +12,13 @@ const ManageLeads = () => {
   const [search, setSearch] = useState('');
   const [viewLead, setViewLead] = useState(null);
 
-  useEffect(() => {
-    adminService.getLeads()
-      .then(setLeads)
-      .catch(() => toast.error('Failed to load leads.'));
-  }, []);
-
   const filtered = leads.filter(l =>
-    l.customerName?.toLowerCase().includes(search.toLowerCase()) ||
-    l.businessName?.toLowerCase().includes(search.toLowerCase()) ||
-    l.serviceRequired?.toLowerCase().includes(search.toLowerCase())
+    l.customerName.toLowerCase().includes(search.toLowerCase()) ||
+    l.businessName.toLowerCase().includes(search.toLowerCase()) ||
+    l.serviceRequired.toLowerCase().includes(search.toLowerCase())
   );
   useEffect(() => {
 
-<<<<<<< HEAD
     const loadLeads = async () => {
 
       try {
@@ -82,12 +71,6 @@ const ManageLeads = () => {
       toast.error(
         'Delete failed'
       );
-=======
-  const deleteLead = (id) => {
-    if (window.confirm('Delete this lead?')) {
-      setLeads(prev => prev.filter(l => l.id !== id));
-      toast.success('Lead removed from view.');
->>>>>>> a4297bdae2499bb3b73fbce6bc1a29aa71b14594
     }
   };
 
