@@ -5,6 +5,7 @@ Only inserts data if the target collections are empty.
 """
 from datetime import datetime
 from .auth.utils import hash_password
+from .config import settings
 
 # ─────────────────────────────────────────────────────────
 # Static seed datasets (mirroring mockData.js)
@@ -361,15 +362,15 @@ async def seed_data(db) -> None:
             "_id": "admin-001",
             "uid": "admin-001",
             "name": "Admin User",
-            "email": "admin@rightads.digital",
+            "email": settings.ADMIN_EMAIL,
             "phone": "0000000000",
-            "password": hash_password("Admin@123"),
+            "password": hash_password(settings.ADMIN_PASSWORD),
             "role": "admin",
             "bookmarks": [],
             "createdAt": datetime.utcnow().isoformat() + "Z",
         }
         await db.users.insert_one(admin_doc)
-        print("[SEED] Admin user seeded.")
+        print(f"[SEED] Admin user ({settings.ADMIN_EMAIL}) seeded.")
 
     if await db.categories.count_documents({}) == 0:
         await db.categories.insert_many(CATEGORIES)

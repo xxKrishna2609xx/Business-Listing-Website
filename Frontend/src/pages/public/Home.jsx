@@ -46,12 +46,14 @@ import {
 import BusinessCard from '../../components/business/BusinessCard';
 import { BusinessCardSkeleton } from '../../components/common/Skeletons';
 import { getCategories, getBusinesses } from '../../services/api';
+import { metaService } from '../../services/metaService';
 import toast from 'react-hot-toast';
 
 const iconMap = {
   UtensilsCrossed, Hotel, Sparkles, Home, Heart, GraduationCap, Key,
   Activity, HardHat, Dog, BedDouble, Building2, Smile, Dumbbell, Coins,
-  PartyPopper, Car, Truck, Send, Grid
+  PartyPopper, Car, Truck, Send, Grid,
+  ShoppingBag, Apple, Milk, Pill, Droplet, WashingMachine, Plane, Train, Bus
 };
 
 const StatCard = ({ icon: Icon, value, label, color }) => (
@@ -64,7 +66,7 @@ const StatCard = ({ icon: Icon, value, label, color }) => (
   </div>
 );
 /* ── Banner images (Unsplash CDN, free-to-use) ── */
-const BANNERS = [
+const FALLBACK_BANNERS = [
   {
     url: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1400&q=80',
     title: 'Find Trusted Businesses Near You',
@@ -103,12 +105,36 @@ const HomePage = () => {
   const [activeTab, setActiveTab] = useState('featured');
   const [categories, setCategories] = useState([]);
   const [businesses, setBusinesses] = useState([]);
+  
+  const [banners, setBanners] = useState(FALLBACK_BANNERS);
+  const [quickServices, setQuickServices] = useState([]);
+
   const [bannerIdx, setBannerIdx] = useState(0);
-  const banner = BANNERS[bannerIdx];
+  const banner = banners[bannerIdx] || FALLBACK_BANNERS[0];
   const navigate = useNavigate();
   const searchRef = useRef(null);
   const bannerTimer = useRef(null);
   const [bannerAnim, setBannerAnim] = useState('slide-in');
+
+  const dailyNeedsItems = quickServices.filter(item => item.section === 'Daily Needs');
+  const travelBookingsItems = quickServices.filter(item => item.section === 'Travel Bookings');
+
+  const dailyNeeds = dailyNeedsItems.length > 0 ? dailyNeedsItems : [
+    { name: 'Groceries', icon: ShoppingBag, iconColor: 'text-indigo-500 fill-indigo-50', query: 'Groceries' },
+    { name: 'Fruits & Veg', icon: Apple, iconColor: 'text-emerald-500 fill-emerald-50', query: 'Vegetables' },
+    { name: 'Milk & Dairy', icon: Milk, iconColor: 'text-blue-500 fill-blue-50', query: 'Dairy' },
+    { name: 'Medicines', icon: Pill, iconColor: 'text-rose-500 fill-rose-50', query: 'Pharmacy' },
+    { name: 'Water Supplier', icon: Droplet, iconColor: 'text-cyan-500 fill-cyan-50', query: 'Water' },
+    { name: 'Laundry/Dry', icon: WashingMachine, iconColor: 'text-amber-500 fill-amber-50', query: 'Laundry' },
+  ];
+
+  const travelBookings = travelBookingsItems.length > 0 ? travelBookingsItems : [
+    { name: 'Flight', icon: Plane, iconColor: 'text-sky-500 fill-sky-50', subtext: 'Powered By\nEasemytrip.com', query: 'Flights' },
+    { name: 'Bus', icon: Bus, iconColor: 'text-red-500 fill-red-50', subtext: 'Affordable Rides', query: 'Bus' },
+    { name: 'Train', icon: Train, iconColor: 'text-indigo-600 fill-indigo-50', subtext: '', query: 'Train' },
+    { name: 'Hotel', icon: Hotel, iconColor: 'text-emerald-500 fill-emerald-50', subtext: 'Budget-friendly\nStay', query: 'Hotels' },
+    { name: 'Car Rentals', icon: Car, iconColor: 'text-blue-500 fill-blue-50', subtext: 'Drive Easy\nAnywhere', query: 'Car Rentals' },
+  ];
 
   const allSuggestions = [
     'SEO Services', 'Web Development', 'Graphic Design', 'Social Media Marketing',
@@ -120,7 +146,7 @@ const HomePage = () => {
   const advanceBanner = (dir = 1) => {
     setBannerAnim('slide-out');
     setTimeout(() => {
-      setBannerIdx(i => (i + dir + BANNERS.length) % BANNERS.length);
+      setBannerIdx(i => (i + dir + banners.length) % banners.length);
       setBannerAnim('slide-in');
     }, 320);
   };
@@ -220,9 +246,20 @@ const HomePage = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [cats, bizs] = await Promise.all([getCategories(), getBusinesses()]);
+        const [cats, bizs, fetchedBanners, fetchedQuickServices] = await Promise.all([
+          getCategories(),
+          getBusinesses(),
+          metaService.getBanners().catch(() => []),
+          metaService.getQuickServices().catch(() => [])
+        ]);
         setCategories(cats);
         setBusinesses(bizs);
+        if (fetchedBanners && fetchedBanners.length > 0) {
+          setBanners(fetchedBanners);
+        }
+        if (fetchedQuickServices && fetchedQuickServices.length > 0) {
+          setQuickServices(fetchedQuickServices);
+        }
       } catch (err) {
         console.error("Failed to load data", err);
       } finally {
@@ -256,7 +293,7 @@ const HomePage = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setBannerIdx(prev =>
-        (prev + 1) % BANNERS.length
+        (prev + 1) % banners.length
       );
     }, 5000);
 
@@ -373,7 +410,7 @@ const HomePage = () => {
 
         {/* Dots */}
         <div style={{ position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 7, zIndex: 10 }}>
-          {BANNERS.map((_, i) => (
+          {banners.map((_, i) => (
             <button key={i} onClick={() => { clearInterval(bannerTimer.current); setBannerIdx(i); bannerTimer.current = setInterval(() => advanceBanner(1), 5000); }} style={{
               width: i === bannerIdx ? 22 : 8, height: 8, borderRadius: 4,
               background: i === bannerIdx ? '#fff' : 'rgba(255,255,255,0.45)',
@@ -591,15 +628,8 @@ const HomePage = () => {
 
               {/* Right Column */}
               <div className="w-full lg:w-3/4 grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-6 md:gap-x-4">
-                {[
-                  { name: 'Groceries', icon: ShoppingBag, iconColor: 'text-indigo-500 fill-indigo-50', query: 'Groceries' },
-                  { name: 'Fruits & Veg', icon: Apple, iconColor: 'text-emerald-500 fill-emerald-50', query: 'Vegetables' },
-                  { name: 'Milk & Dairy', icon: Milk, iconColor: 'text-blue-500 fill-blue-50', query: 'Dairy' },
-                  { name: 'Medicines', icon: Pill, iconColor: 'text-rose-500 fill-rose-50', query: 'Pharmacy' },
-                  { name: 'Water Supplier', icon: Droplet, iconColor: 'text-cyan-500 fill-cyan-50', query: 'Water' },
-                  { name: 'Laundry/Dry', icon: WashingMachine, iconColor: 'text-amber-500 fill-amber-50', query: 'Laundry' },
-                ].map((item, idx) => {
-                  const Icon = item.icon;
+                {dailyNeeds.map((item, idx) => {
+                  const Icon = typeof item.icon === 'string' ? (iconMap[item.icon] || Grid) : item.icon;
                   return (
                     <Link
                       key={idx}
@@ -607,7 +637,7 @@ const HomePage = () => {
                       className="group flex flex-col items-center w-full text-center"
                     >
                       <div className="w-20 h-20 bg-white border border-slate-200 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:border-blue-500 group-hover:shadow-md group-hover:-translate-y-1 cursor-pointer">
-                        <Icon size={32} strokeWidth={1.5} className={`${item.iconColor} transition-transform duration-300 group-hover:scale-110`} />
+                        <Icon size={32} strokeWidth={1.5} className={`${item.iconColor || 'text-slate-600'} transition-transform duration-300 group-hover:scale-110`} />
                       </div>
                       <span className="text-xs sm:text-[13px] font-bold text-slate-700 mt-2 text-center group-hover:text-blue-600 transition-colors leading-tight">
                         {item.name}
@@ -641,14 +671,8 @@ const HomePage = () => {
 
               {/* Right Column */}
               <div className="w-full lg:w-3/4 grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-6 md:gap-x-4">
-                {[
-                  { name: 'Flight', icon: Plane, iconColor: 'text-sky-500 fill-sky-50', subtext: 'Powered By\nEasemytrip.com', query: 'Flights' },
-                  { name: 'Bus', icon: Bus, iconColor: 'text-red-500 fill-red-50', subtext: 'Affordable Rides', query: 'Bus' },
-                  { name: 'Train', icon: Train, iconColor: 'text-indigo-600 fill-indigo-50', subtext: '', query: 'Train' },
-                  { name: 'Hotel', icon: Hotel, iconColor: 'text-emerald-500 fill-emerald-50', subtext: 'Budget-friendly\nStay', query: 'Hotels' },
-                  { name: 'Car Rentals', icon: Car, iconColor: 'text-blue-500 fill-blue-50', subtext: 'Drive Easy\nAnywhere', query: 'Car Rentals' },
-                ].map((item, idx) => {
-                  const Icon = item.icon;
+                {travelBookings.map((item, idx) => {
+                  const Icon = typeof item.icon === 'string' ? (iconMap[item.icon] || Grid) : item.icon;
                   return (
                     <Link
                       key={idx}
@@ -656,7 +680,7 @@ const HomePage = () => {
                       className="group flex flex-col items-center w-full text-center"
                     >
                       <div className="w-20 h-20 bg-white border border-slate-200 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:border-blue-500 group-hover:shadow-md group-hover:-translate-y-1 cursor-pointer">
-                        <Icon size={32} strokeWidth={1.5} className={`${item.iconColor} transition-transform duration-300 group-hover:scale-110`} />
+                        <Icon size={32} strokeWidth={1.5} className={`${item.iconColor || 'text-slate-600'} transition-transform duration-300 group-hover:scale-110`} />
                       </div>
                       <span className="text-xs sm:text-[13px] font-bold text-slate-700 mt-2 text-center group-hover:text-blue-600 transition-colors leading-tight">
                         {item.name}

@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     DB_NAME: str = "rightads_db"
     JWT_SECRET: str = "rightads-super-secret-jwt-key-2024"
     JWT_EXPIRE_MINUTES: int = 10080  # 7 days
+    ADMIN_EMAIL: str = "admin@rightads.digital"
+    ADMIN_PASSWORD: str = "Admin@123"
 
     class Config:
         env_file = ".env"

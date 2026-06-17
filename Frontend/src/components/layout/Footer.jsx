@@ -46,10 +46,17 @@ const Footer = () => {
               India's premier digital business directory connecting customers with verified local businesses across all categories.
             </p>
             <div className="flex items-center gap-3">
-              {[Facebook, Instagram, Linkedin, Twitter].map((Icon, i) => (
+              {[
+                { Icon: Facebook, href: import.meta.env.VITE_SOCIAL_FACEBOOK || '#' },
+                { Icon: Instagram, href: import.meta.env.VITE_SOCIAL_INSTAGRAM || '#' },
+                { Icon: Linkedin, href: import.meta.env.VITE_SOCIAL_LINKEDIN || '#' },
+                { Icon: Twitter, href: import.meta.env.VITE_SOCIAL_TWITTER || '#' },
+              ].map(({ Icon, href }, i) => (
                 <a
                   key={i}
-                  href="#"
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-8 h-8 bg-slate-800 hover:bg-blue-600 rounded-lg flex items-center justify-center transition-colors"
                 >
                   <Icon size={15} />
@@ -84,8 +91,8 @@ const Footer = () => {
                 { label: 'Search Businesses', to: '/search' },
                 { label: 'List Your Business', to: '/apply' },
                 { label: 'Admin Panel', to: '/admin/login' },
-                { label: 'Privacy Policy', to: '#' },
-                { label: 'Terms of Service', to: '#' },
+                { label: 'Privacy Policy', to: import.meta.env.VITE_POLICY_PRIVACY || '#' },
+                { label: 'Terms of Service', to: import.meta.env.VITE_POLICY_TERMS || '#' },
               ].map((link, i) => (
                 <li key={i}>
                   <Link
@@ -105,16 +112,22 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start gap-2.5 text-sm text-slate-400">
                 <MapPin size={15} className="mt-0.5 text-blue-400 flex-shrink-0" />
-                14, Business Hub, Sector 21, Mumbai, Maharashtra 400001
+                {import.meta.env.VITE_CONTACT_ADDRESS || "14, Business Hub, Sector 21, Mumbai, Maharashtra 400001"}
               </li>
               <li>
-                <a href="tel:+919876500000" className="flex items-center gap-2.5 text-sm text-slate-400 hover:text-blue-400 transition-colors">
-                  <Phone size={15} className="text-blue-400" /> +91 98765 00000
+                <a 
+                  href={`tel:${(import.meta.env.VITE_CONTACT_PHONE || "+91 98765 00000").replace(/\s+/g, '')}`} 
+                  className="flex items-center gap-2.5 text-sm text-slate-400 hover:text-blue-400 transition-colors"
+                >
+                  <Phone size={15} className="text-blue-400" /> {import.meta.env.VITE_CONTACT_PHONE || "+91 98765 00000"}
                 </a>
               </li>
               <li>
-                <a href="mailto:support@rightadsdigital.com" className="flex items-center gap-2.5 text-sm text-slate-400 hover:text-blue-400 transition-colors">
-                  <Mail size={15} className="text-blue-400" /> support@rightadsdigital.com
+                <a 
+                  href={`mailto:${import.meta.env.VITE_CONTACT_EMAIL || "support@rightadsdigital.com"}`} 
+                  className="flex items-center gap-2.5 text-sm text-slate-400 hover:text-blue-400 transition-colors"
+                >
+                  <Mail size={15} className="text-blue-400" /> {import.meta.env.VITE_CONTACT_EMAIL || "support@rightadsdigital.com"}
                 </a>
               </li>
             </ul>

@@ -21,8 +21,8 @@ pwd_context = CryptContext(
 async def create_admin():
     print(f"Connecting to database: {DATABASE_NAME}")
     
-    email = "admin@gmail.com"
-    password = "ADMIN@123"
+    email = os.getenv("ADMIN_EMAIL", "admin@gmail.com")
+    password = os.getenv("ADMIN_PASSWORD", "ADMIN@123")
     
     hashed_password = pwd_context.hash(password)
     
@@ -30,7 +30,7 @@ async def create_admin():
     user = await db.users.find_one({"email": email})
     
     if user:
-        print("User admin@gmail.com exists, updating role and password...")
+        print(f"User {email} exists, updating role and password...")
         await db.users.update_one(
             {"_id": user["_id"]},
             {
@@ -42,7 +42,7 @@ async def create_admin():
         )
         print("User updated successfully!")
     else:
-        print("User admin@gmail.com does not exist, creating new admin user...")
+        print(f"User {email} does not exist, creating new admin user...")
         result = await db.users.insert_one({
             "name": "Admin User",
             "email": email,

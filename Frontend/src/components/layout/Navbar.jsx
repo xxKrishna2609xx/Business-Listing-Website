@@ -3,29 +3,36 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, Menu, X, Globe, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import { loginUserApi, getCategories, getSubcategories } from '../../services/api';
+import { config } from '../../config';
 import './Navbar.css';
-
-const CATEGORIES = [
-  'All Categories','Food & Dining','Health & Wellness','Education',
-  'Real Estate','Technology','Retail','Travel','Beauty & Spa','Auto Services',
-];
-const SUGGESTIONS = [
-  'Web Development','SEO Services','Graphic Design',
-  'Social Media Marketing','Mobile App Development','Branding',
-];
-
-// BUG 2 FIX: each tab has an exact path match pattern
-const NAV_TABS = [
-  { label: 'Home',       to: '/',          match: (p) => p === '/'           },
-  { label: 'Categories', to: '/search',    match: (p) => p === '/search' || p.startsWith('/category') },
-  { label: 'Services',   to: '/search?query=services',    match: (p) => false               }, // never auto-active
-];
 
 
 export default function Navbar() {
   const { user, isLoggedIn, logout } = useAuth();
   const navigate  = useNavigate();
   const location  = useLocation();
+
+  const [categoriesList, setCategoriesList] = useState(config.defaultCategories);
+  const [suggestionsList, setSuggestionsList] = useState(config.defaultSuggestions);
+
+  useEffect(() => {
+    getCategories()
+      .then(data => {
+        if (data && data.length > 0) {
+          setCategoriesList(['All Categories', ...data.map(c => c.name)]);
+        }
+      })
+      .catch(console.error);
+
+    getSubcategories()
+      .then(data => {
+        if (data && data.length > 0) {
+          setSuggestionsList(data.map(s => s.name));
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   const [scrolled,   setScrolled]   = useState(false);
   const [pillQ,      setPillQ]      = useState('');
@@ -121,7 +128,7 @@ export default function Navbar() {
     ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
     : <User size={14} />;
 
-  const filtSuggs = SUGGESTIONS.filter(s =>
+  const filtSuggs = suggestionsList.filter(s =>
     !pillQ || s.toLowerCase().includes(pillQ.toLowerCase())
   ).slice(0, 5);
 
@@ -150,7 +157,7 @@ export default function Navbar() {
 
             {/* BUG 2 FIX: only one tab active via match() */}
             <div className="nb__tabs">
-              {NAV_TABS.map(({ label, to, match }) => (
+              {config.navTabs.map(({ label, to, match }) => (
                 <Link
                   key={label}
                   to={to}
@@ -197,7 +204,7 @@ export default function Navbar() {
                 <div className="nb__compact-sec" style={{ maxWidth: 100 }}>
                   <div className="nb__compact-label">Category</div>
                   <select className="nb__compact-input" style={{ appearance: 'none' }}>
-                    {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                    {categoriesList.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <button type="submit" className="nb__compact-btn" aria-label="Search">
@@ -318,7 +325,7 @@ export default function Navbar() {
                     onChange={e => setPillCat(e.target.value)}
                     onFocus={() => setFocSec('cat')}
                   >
-                    {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                    {categoriesList.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
 
