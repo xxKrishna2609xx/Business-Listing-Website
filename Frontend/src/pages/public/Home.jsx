@@ -45,8 +45,7 @@ import {
 } from 'lucide-react';
 import BusinessCard from '../../components/business/BusinessCard';
 import { BusinessCardSkeleton } from '../../components/common/Skeletons';
-import { getCategories, getBusinesses } from '../../services/api';
-import { metaService } from '../../services/metaService';
+import { getCategories, getBusinesses, getBanners, getQuickServices } from '../../services/api';
 import toast from 'react-hot-toast';
 
 const iconMap = {
@@ -249,8 +248,8 @@ const HomePage = () => {
         const [cats, bizs, fetchedBanners, fetchedQuickServices] = await Promise.all([
           getCategories(),
           getBusinesses(),
-          metaService.getBanners().catch(() => []),
-          metaService.getQuickServices().catch(() => [])
+          getBanners().catch(() => []),
+          getQuickServices().catch(() => [])
         ]);
         setCategories(cats);
         setBusinesses(bizs);

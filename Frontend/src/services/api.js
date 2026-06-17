@@ -32,10 +32,9 @@ api.interceptors.response.use(
 
   async (error) => {
 
-    const originalRequest =
-      error.config;
+    const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/auth/refresh')){
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/auth/refresh') && !originalRequest.url.includes('/auth/login')){
 
       originalRequest._retry = true;
 
@@ -55,8 +54,7 @@ api.interceptors.response.use(
             }
           );
 
-        const newAccessToken =
-          response.data.access_token;
+        const newAccessToken = response.data.access_token;
 
         localStorage.setItem(
           'access_token',
@@ -90,7 +88,7 @@ api.interceptors.response.use(
         return Promise.reject(
           error
         );
-      }
+      } 
     }
 
     return Promise.reject(
@@ -438,3 +436,18 @@ export const adminLogin = async (
 
   return data;
 }; 
+
+export const getBanners = async () => {
+  const { data } = await api.get('/banners');
+  return data;
+};
+
+export const getQuickServices = async () => {
+  const { data } = await api.get('/quick-services');
+  return data;
+};
+
+export const getPublicStats = async () => {
+  const { data } = await api.get('/public-stats');
+  return data;
+};

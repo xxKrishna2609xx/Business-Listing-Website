@@ -365,10 +365,14 @@ async def update_business_rating(business_id: str):
         calculate_rating(reviews)
     )
 
+    query_filter = {}
+    try:
+        query_filter = {"_id": ObjectId(business_id)}
+    except Exception:
+        query_filter = {"_id": business_id}
+
     await db.businesses.update_one(
-        {
-            "id": business_id
-        },
+        query_filter,
         {
             "$set": {
                 "rating": rating_avg,
@@ -1067,6 +1071,48 @@ async def get_me(
             )
     }
 
+
+
+@app.get("/api/banners")
+async def list_banners():
+    cursor = db.banners.find({})
+    docs = await cursor.to_list(length=100)
+    return [serializeDict(d) for d in docs]
+
+
+@app.get("/api/quick-services")
+async def list_quick_services():
+    cursor = db.quick_services.find({})
+    docs = await cursor.to_list(length=100)
+    return [serializeDict(d) for d in docs]
+
+
+@app.get("/api/public-stats")
+async def get_public_stats():
+    listings_count = await db.businesses.count_documents({"status": "APPROVED"})
+    verified_count = await db.businesses.count_documents({"status": "APPROVED", "verified": True})
+    categories_count = await db.categories.count_documents({})
+    
+    # Calculate average rating
+    pipeline = [
+        {"$match": {"status": "APPROVED", "rating": {"$exists": True}}},
+        {"$group": {"_id": None, "avgRating": {"$avg": "$rating"}}}
+    ]
+    cursor = db.businesses.aggregate(pipeline)
+    avg_rating_doc = await cursor.to_list(length=1)
+    
+    if avg_rating_doc and avg_rating_doc[0].get("avgRating") is not None:
+        avg_rating = round(avg_rating_doc[0]["avgRating"], 1)
+    else:
+        avg_rating = 4.8  # Fallback standard rating
+        
+    return {
+        "listingsCount": listings_count,
+        "verifiedCount": verified_count,
+        "categoriesCount": categories_count,
+        "avgRating": f"{avg_rating}★",
+        "monthlyUsers": "10K+",  # Static estimate
+    }
 
 
 if __name__ == "__main__":
