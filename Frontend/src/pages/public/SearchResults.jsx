@@ -81,7 +81,12 @@ const SearchResults = () => {
         // console.log("API DATA", data);
         let filtered = data.filter(b => b.status === 'APPROVED');
         if (selectedCategory) {
-          filtered = filtered.filter(b => b.categoryId === selectedCategory);
+          const matchedCat = categories.find(c => c.id === selectedCategory || c._id === selectedCategory);
+          if (matchedCat) {
+            filtered = filtered.filter(b => b.categoryId === matchedCat.id || b.categoryId === matchedCat._id);
+          } else {
+            filtered = filtered.filter(b => b.categoryId === selectedCategory);
+          }
         }
         
         // Extract brands

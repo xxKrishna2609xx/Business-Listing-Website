@@ -335,7 +335,10 @@ const HomePage = () => {
     }
   };
 
-  const displayedBusinesses = activeTab === 'featured' ? businesses.filter(b => b.featured) : businesses.slice().reverse().slice(0, 4);
+  const featuredBusinesses = businesses.filter(b => b.featured);
+  const displayedBusinesses = activeTab === 'featured'
+    ? (featuredBusinesses.length > 0 ? featuredBusinesses : businesses.slice(0, 6))
+    : businesses.slice().reverse();
 
   return (
     <div className="min-h-screen">

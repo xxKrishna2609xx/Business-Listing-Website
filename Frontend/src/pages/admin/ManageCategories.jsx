@@ -71,9 +71,9 @@ const ManageCategories = () => {
     try {
 
       if (catModal !== 'add') {
-
+        // Use _id (always set) as the primary update key
         await updateCategory(
-          catModal.id,
+          catModal._id || catModal.id,
           {
             name: catForm.name,
             color: catForm.color
@@ -87,7 +87,6 @@ const ManageCategories = () => {
       } else {
 
         await createCategory({
-          id: `cat-${Date.now()}`,
           name: catForm.name,
           slug: catForm.name
             .toLowerCase()
@@ -117,11 +116,10 @@ const ManageCategories = () => {
     }
   };
 
-  const deleteSub = async (id) => {
-
+  const deleteSub = async (sub) => {
     try {
-
-      await deleteSubcategory(id);
+      // Use _id (MongoDB string ID) as primary key, fall back to custom id
+      await deleteSubcategory(sub._id || sub.id);
 
       const subcategories =
         await getSubcategories();
@@ -159,7 +157,6 @@ const ManageCategories = () => {
     try {
 
       await createSubcategory({
-        id: `sub-${Date.now()}`,
         name: subForm.name,
         slug: subForm.name
           .toLowerCase()
@@ -189,16 +186,16 @@ const ManageCategories = () => {
     }
   };
 
-  const deleteCat = async (id) => {
+  const deleteCat = async (cat) => {
 
     if (!window.confirm(
-        'Delete this category?'
+        'Delete this category and all its subcategories?'
       )
     ) return;
 
     try {
-
-      await deleteCategory(id);
+      // Use _id (always set) as the primary delete key
+      await deleteCategory(cat._id || cat.id);
 
       const categories =
         await getCategories();
@@ -267,7 +264,7 @@ const ManageCategories = () => {
                 <Tag size={20} className="text-white" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm mb-1">{cat.name}</h3>
-              <p className="text-xs text-slate-400 mb-3">{subs.filter(s => s.categoryId === cat.id).length} subcategories</p>
+              <p className="text-xs text-slate-400 mb-3">{subs.filter(s => s.categoryId === cat.id || s.categoryId === cat._id).length} subcategories</p>
               <div className="flex gap-1.5">
                 <button
                   onClick={() => openEditCat(cat)}
@@ -276,7 +273,7 @@ const ManageCategories = () => {
                   <Edit2 size={12} /> Edit
                 </button>
                 <button
-                  onClick={() => deleteCat(cat.id)}
+                  onClick={() => deleteCat(cat)}
                   className="p-1.5 border border-slate-200 text-slate-400 hover:border-red-300 hover:text-red-500 rounded-lg transition-colors"
                 >
                   <Trash2 size={13} />
@@ -302,17 +299,17 @@ const ManageCategories = () => {
               {subs.map(sub => {
                 const parent = cats.find(c => c.id === sub.categoryId);
                 return (
-                  <tr key={sub.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={sub._id || sub.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-semibold text-slate-800">{sub.name}</td>
                     <td className="px-4 py-3 text-slate-400 text-xs font-mono">{sub.slug}</td>
                     <td className="px-4 py-3">
                       <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100">
-                        {parent?.name || 'N/A'}
+                        {cats.find(c => c.id === sub.categoryId || c._id === sub.categoryId)?.name || 'N/A'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => deleteSub(sub.id)}
+                        onClick={() => deleteSub(sub)}
                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
                         <Trash2 size={14} />
@@ -389,7 +386,7 @@ const ManageCategories = () => {
                   className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
                   <option value="">Select Category</option>
-                  {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {cats.map(c => <option key={c._id || c.id} value={c._id || c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div>

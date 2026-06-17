@@ -59,6 +59,9 @@ def serializeList(items) -> list:
 
 def serializeDict(item):
     item["_id"] = str(item["_id"])
+    # Always expose a guaranteed 'id' field so frontend cat.id / sub.id always works
+    if "id" not in item or not item["id"]:
+        item["id"] = item["_id"]
     return item
 
 
@@ -126,13 +129,13 @@ class BusinessApplication(BaseModel):
     services: list = []
 
 class CategoryCreate(BaseModel):
-    id: str
+    id: Optional[str] = None
     name: str
     slug: str
     color: str
 
 class SubcategoryCreate(BaseModel):
-    id: str
+    id: Optional[str] = None
     name: str
     slug: str
     categoryId: str
@@ -216,7 +219,10 @@ async def get_subcategories():
 
 @app.get("/api/businesses")
 async def get_businesses():
-    businesses = await db.businesses.find().to_list(1000)
+    # Only return APPROVED businesses publicly; seed data may not have status field so include those too
+    businesses = await db.businesses.find(
+        {"$or": [{"status": "APPROVED"}, {"status": {"$exists": False}}]}
+    ).to_list(1000)
     return serializeList(businesses)
 
 @app.get("/api/businesses/featured")
@@ -799,11 +805,8 @@ async def delete_application(
 
 @app.post("/api/categories")
 async def create_category(category: CategoryCreate):
-
-    result = await db.categories.insert_one(
-        category.dict()
-    )
-
+    data = category.dict(exclude_none=True)
+    result = await db.categories.insert_one(data)
     return {
         "success": True,
         "id": str(result.inserted_id)
@@ -811,28 +814,39 @@ async def create_category(category: CategoryCreate):
 
 @app.delete("/api/categories/{id}")
 async def delete_category(id: str):
+    category = None
+    try:
+        category = await db.categories.find_one({"_id": ObjectId(id)})
+    except Exception:
+        pass
+    if not category:
+        category = await db.categories.find_one({"id": id})
 
-    await db.categories.delete_one({
-        "id": id
-    })
+    if category:
+        cat_custom_id = category.get("id")
+        cat_oid = str(category.get("_id"))
+        
+        # Delete the category
+        await db.categories.delete_one({"_id": category["_id"]})
+        
+        # Cascade delete subcategories linked to this category (using either id format)
+        query = []
+        if cat_custom_id:
+            query.append({"categoryId": cat_custom_id})
+        if cat_oid:
+            query.append({"categoryId": cat_oid})
+            
+        if query:
+            await db.subcategories.delete_many({"$or": query})
 
-    await db.subcategories.delete_many({
-        "categoryId": id
-    })
-
-    return {
-        "success": True
-    }
+    return {"success": True}
 
 @app.post("/api/subcategories")
 async def create_subcategory(
     subcategory: SubcategoryCreate
 ):
-
-    result = await db.subcategories.insert_one(
-        subcategory.dict()
-    )
-
+    data = subcategory.dict(exclude_none=True)
+    result = await db.subcategories.insert_one(data)
     return {
         "success": True,
         "id": str(result.inserted_id)
@@ -840,27 +854,24 @@ async def create_subcategory(
 
 @app.delete("/api/subcategories/{id}")
 async def delete_subcategory(id: str):
+    result = await db.subcategories.delete_one({"id": id})
+    if result.deleted_count == 0:
+        try:
+            await db.subcategories.delete_one({"_id": ObjectId(id)})
+        except Exception:
+            pass
 
-    await db.subcategories.delete_one({
-        "id": id
-    })
-
-    return {
-        "success": True
-    }
+    return {"success": True}
 
 @app.put("/api/categories/{id}")
-async def update_category(id: str,category: CategoryUpdate):
-
-    await db.categories.update_one(
-        {"id": id},
-        {
-            "$set": {
-                "name": category.name,
-                "color": category.color
-            }
-        }
-    )
+async def update_category(id: str, category: CategoryUpdate):
+    update_data = {"$set": {"name": category.name, "color": category.color}}
+    result = await db.categories.update_one({"id": id}, update_data)
+    if result.matched_count == 0:
+        try:
+            await db.categories.update_one({"_id": ObjectId(id)}, update_data)
+        except Exception:
+            pass
 
     return {"success": True}
 
@@ -919,23 +930,27 @@ async def toggle_feature(id: str,admin=Depends(get_admin_user)):
 async def get_my_business_leads(
     email: str
 ):
-
     businesses = await db.businesses.find(
         {
             "email": email
         }
     ).to_list(1000)
 
-    business_ids = [
-        b["id"]
-        for b in businesses
-    ]
+    business_ids = []
+    business_names = []
+    for b in businesses:
+        if "id" in b and b["id"]:
+            business_ids.append(b["id"])
+        business_ids.append(str(b["_id"]))
+        if "businessName" in b and b["businessName"]:
+            business_names.append(b["businessName"])
 
     leads = await db.leads.find(
         {
-            "businessId": {
-                "$in": business_ids
-            }
+            "$or": [
+                {"businessId": {"$in": business_ids}},
+                {"businessName": {"$in": business_names}}
+            ]
         }
     ).to_list(1000)
 

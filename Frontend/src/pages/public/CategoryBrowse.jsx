@@ -25,9 +25,11 @@ const CategoryBrowse = () => {
     fetchData();
   }, []);
 
-  const category = categories.find(c => c.slug === categorySlug);
-  const subcategory = subcategories.find(s => s.slug === subcategorySlug);
-  const catSubcategories = subcategories.filter(s => s.categoryId === category?.id);
+  const category = categories.find(c => c.slug === categorySlug || c.id === categorySlug || c._id === categorySlug);
+  const subcategory = subcategories.find(s => s.slug === subcategorySlug || s.id === subcategorySlug || s._id === subcategorySlug);
+  const catSubcategories = category 
+    ? subcategories.filter(s => s.categoryId === category.id || s.categoryId === category._id) 
+    : [];
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -35,8 +37,8 @@ const CategoryBrowse = () => {
       try {
         const data = await searchBusinesses(); // Fetch all or apply initial filter logic if needed in backend
         let filtered = data.filter(b => b.status === 'APPROVED');
-        if (category) filtered = filtered.filter(b => b.categoryId === category.id);
-        if (subcategory) filtered = filtered.filter(b => b.subcategoryId === subcategory.id);
+        if (category) filtered = filtered.filter(b => b.categoryId === category.id || b.categoryId === category._id);
+        if (subcategory) filtered = filtered.filter(b => b.subcategoryId === subcategory.id || b.subcategoryId === subcategory._id);
         setResults(filtered);
       } catch (err) {
         console.error("Failed to load results", err);

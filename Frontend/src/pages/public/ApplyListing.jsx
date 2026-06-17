@@ -24,7 +24,10 @@ const ApplyListing = () => {
   });
   const [errors, setErrors] = useState({});
 
- const filteredSubs =subcategories?.filter(s => s.categoryId === form.categoryId) || [];
+  const selectedCatObj = categories.find(c => c.id === form.categoryId || c._id === form.categoryId);
+  const filteredSubs = selectedCatObj
+    ? subcategories?.filter(s => s.categoryId === selectedCatObj.id || s.categoryId === selectedCatObj._id) || []
+    : [];
 
   useEffect(() => {
 
@@ -142,11 +145,11 @@ const ApplyListing = () => {
 
     try {
       const selectedCategory = categories.find(
-          c => c.id === form.categoryId
+          c => c.id === form.categoryId || c._id === form.categoryId
         );
 
       const selectedSubcategory = subcategories.find(
-          s => s.id === form.subcategoryId
+          s => s.id === form.subcategoryId || s._id === form.subcategoryId
         );
 
       await submitBusiness({
