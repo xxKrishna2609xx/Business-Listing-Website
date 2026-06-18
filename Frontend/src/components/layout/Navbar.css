@@ -44,8 +44,8 @@
 /* Logo */
 .nb__logo { flex-shrink: 0; display: flex; align-items: center; text-decoration: none; }
 .nb__logo img { width: auto; display: block; transition: height 0.3s ease; }
-.nb--expanded .nb__logo img { height: 40px; }
-.nb--compact  .nb__logo img { height: 32px; }
+.nb--expanded .nb__logo img { height: 70px; }
+.nb--compact  .nb__logo img { height: 50px; }
 
 /* ── Nav tabs (centre) ─────────────────────────── */
 .nb__tabs {
