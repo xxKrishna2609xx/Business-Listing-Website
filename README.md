@@ -11,34 +11,39 @@ A premium, modern, and high-performance local business listing directory website
 
 ---
 
-## 🎨 User Experience Highlights
+## 🎨 Design & UX Highlights
 
 Right Ads Digital has been designed to prioritize visual elegance, seamless interactivity, and speed:
 * **Glassmorphic Hero Banner**: Immersive background slide animations (powered by Unsplash CDN) and interactive auto-slider controls.
 * **Geolocalized Search**: Integrated Nominatim OpenStreetMap API for automated client-side pincode and city detection.
 * **Smooth Micro-Animations**: Built with Framer Motion to provide high-end, responsive card hover states, fade-in loading, and active transitions.
-* **Dual theme controls & layouts**: Completely responsive grids tailored perfectly from mobile screen widths up to 1280px desktops.
+* **Responsive Layouts**: Completely responsive grids tailored perfectly from mobile screen widths up to 1280px desktops.
 
 ---
 
-## ✨ Features Checklist
+## ⚙️ Core Technology Stack
 
-### 💻 Public Portal & Customer Features
-* 🔍 **Smart Multi-Parametric Search**: Locate businesses quickly by custom text queries, categories, city, or pincode.
-* 🏷️ **Trending & Quick Categories**: Speed up lookup using smart shortcut tags (e.g., Restaurants, Gyms, Spas) and subcategories.
-* 🗺️ **Detailed Business Profiles**: Review operating hours, specific services, brand alliances, star ratings, and contact info.
-* 📨 **Lead / Quote Generator**: Directly request quotes/leads from businesses via interactive pop-up forms that immediately update the database.
-* 🔖 **Favorites & Bookmarks**: Save listings to a personalized dashboard for easy access later (requires user login).
+This application is built with a decoupled architecture utilizing industry-standard technologies:
 
-### 🏢 Partner & Business Listing Portal
-* ➕ **Listing Submissions**: Self-service wizard for business owners to submit names, contacts, descriptions, services, logo URLs, and branding metadata.
-* 📊 **Lead Center**: Real-time customer lead inquiries routed specifically to listing owners.
+### 💻 Frontend Client (Vite + React SPA)
+* **[React v19.2.6](https://react.dev/)**: Component-driven UI development with optimal reactivity and virtual DOM rendering.
+* **[Vite v8.0.12](https://vitejs.dev/)**: Next-generation frontend tooling providing extremely fast Hot Module Replacement (HMR) and builds.
+* **[Tailwind CSS v4.3.1](https://tailwindcss.com/)**: Utility-first CSS framework with dynamic compiled runtime engine for beautiful layout aesthetics.
+* **[Framer Motion](https://www.framer.com/motion/)**: Fluid animations and micro-interactions for enhanced feedback.
+* **[Axios](https://axios-http.com/)**: Promise-based HTTP client for seamless API requests to the backend.
+* **[Lucide React](https://lucide.dev/)**: Clean, modern, and light SVG icon set.
+* **[React Hot Toast](https://react-hot-toast.com/)**: Sleek, non-intrusive notifications for user feedback.
 
-### 🛡️ Admin Management Panel
-* 📉 **Interactive Analytics HUD**: Real-time stats on registered users, active businesses, pending applications, and generated leads.
-* 🗂️ **Categories Organizer**: Complete CRUD operations for categories (with icon classes, custom slugs, and design colors).
-* 📝 **Application Verification Workflows**: Approve, reject, or put new business listings on hold with a single click.
-* 💼 **Global Leads Tracker**: Complete administrative oversight over all inquiry transactions occurring across the application.
+### 🔌 Backend API Server (FastAPI)
+* **[FastAPI v0.111.0](https://fastapi.tiangolo.com/)**: High-performance, asynchronous web framework for building APIs with Python.
+* **[Uvicorn v0.29.0](https://www.uvicorn.org/)**: Lightning-fast ASGI web server implementation.
+* **[Pydantic v2](https://docs.pydantic.dev/)**: Data validation and settings management using Python type annotations.
+* **[JWT & Python-Jose](https://jwt.io/)**: Secure JSON Web Token-based stateless authentication protocols.
+* **[Bcrypt & Passlib](https://passlib.readthedocs.io/)**: Industry-standard cryptographic secure password hashing and verification.
+
+### 💾 Database (MongoDB)
+* **[MongoDB Community / Atlas](https://www.mongodb.com/)**: Scalable document-based NoSQL database.
+* **[Motor v3.4.0](https://motor.readthedocs.io/)**: Asynchronous MongoDB driver for Python (enabling non-blocking FastAPI integration).
 
 ---
 
@@ -58,7 +63,7 @@ graph TD
 | **Frontend App** | `http://localhost:5173` | HTTP (Vite Dev Server) |
 | **Backend API** | `http://localhost:8000` | REST API (Uvicorn / FastAPI) |
 | **Interactive Docs** | `http://localhost:8000/docs` | Swagger OpenAPIs |
-| **Database Engine** | `mongodb://localhost:27017` | MongoDB Community Server |
+| **Database Engine** | `mongodb://localhost:27017` | MongoDB Community Server / Atlas |
 
 ---
 
@@ -73,7 +78,7 @@ graph TD
 │   │   ├── config.py      # App configurations (.env file loader)
 │   │   ├── database.py    # Asynchronous MongoDB Connection Setup (Motor Client)
 │   │   ├── main.py        # FastAPI Initialization, CORS middleware, and Lifespan seeding
-│   │   └── seed.py        # Automated Database Seeder (Seeds 19 Categories on first launch)
+│   │   └── seed.py        # Automated Database Seeder (Seeds categories, admin, and test listings)
 │   ├── requirements.txt   # Backend Pip Dependencies
 │   └── run.py             # Server runner script
 │
@@ -82,7 +87,7 @@ graph TD
 │   │   ├── components/    # Common UI elements (Navbar, Footer, Skeletons, Business Cards)
 │   │   ├── context/       # Auth state sharing context across the React app
 │   │   ├── data/          # Frontend static mock structures and assets
-│   │   ├── pages/         # Screen views (Home, CategoryBrowse, Dashboard, Admin, SearchResults)
+│   │   ├── pages/         # Screen views (Home, CategoryBrowse, Dashboard, Admin, Search)
 │   │   ├── services/      # Axios endpoints connecting directly to Backend router services
 │   │   └── App.jsx        # Routing configuration & client entry
 │   ├── package.json       # React dependencies and scripts
@@ -94,109 +99,113 @@ graph TD
 ## 🚀 Quick Start Guide
 
 ### 📋 Prerequisites
-Ensure the following are installed and running locally:
-* **Node.js** (v18.0 or higher recommended)
-* **Python** (v3.9 or higher recommended)
-* **MongoDB Community Server** (running locally on port `27017`)
+
+Before running the application, make sure you have the following installed on your machine:
+* **Node.js** (v18.0 or higher) & **npm** (v9.0 or higher)
+* **Python** (v3.9 or higher)
+* **MongoDB** (Running locally on port `27017`, or use an Atlas Cloud connection string)
 
 ---
 
-### 📥 Step 1: Clone and Prepare
-Open your terminal inside the project directory:
-```bash
-git clone https://github.com/xxKrishna2609xx/Business-Listing-Website.git
-cd Business-Listing-Website
-```
+### 🐍 Step 1: Start the Backend Server (FastAPI)
 
----
-
-### 🔌 Step 2: Start the MongoDB Server
-Verify MongoDB is running locally on port `27017`.
-* **Windows**: Open `Services.msc`, select **MongoDB Server**, and click **Start**.
-* **macOS**: `brew services start mongodb-community`
-* **Linux**: `sudo systemctl start mongod`
-
----
-
-### 🐍 Step 3: Launch the Backend Server
-
-1. Navigate to the `backend` folder:
+1. **Navigate to the backend directory**:
    ```bash
    cd backend
    ```
 
-2. Create a virtual environment and activate it:
-   ```bash
-   # Windows (CMD)
-   python -m venv venv
-   venv\Scripts\activate
-
-   # Windows (PowerShell)
-   python -m venv venv
-   .\venv\Scripts\Activate.ps1
-
-   # macOS/Linux
-   python3 -m venv venv
-   source venv/bin/activate
+2. **Configure your environment**:
+   Create a `.env` file in the `backend` folder (or copy and update the existing one):
+   ```env
+   MONGO_URI=mongodb://localhost:27017
+   DB_NAME=nearlly_db
+   SECRET_KEY=your_access_secret_key
+   REFRESH_SECRET_KEY=your_refresh_secret_key
+   ALGORITHM=HS256
+   ACCESS_TOKEN_EXPIRE_MINUTES=30
+   REFRESH_TOKEN_EXPIRE_DAYS=7
+   ADMIN_EMAIL=admin@rightads.digital
+   ADMIN_PASSWORD=Admin@123
    ```
 
-3. Install the dependencies:
+3. **Set up a Virtual Environment**:
+   * **Windows (PowerShell)**:
+     ```powershell
+     python -m venv venv
+     .\venv\Scripts\Activate.ps1
+     ```
+   * **Windows (CMD)**:
+     ```cmd
+     python -m venv venv
+     call venv\Scripts\activate.bat
+     ```
+   * **macOS / Linux**:
+     ```bash
+     python3 -m venv venv
+     source venv/bin/activate
+     ```
+
+4. **Install Dependencies**:
+   Ensure your pip packages are updated and install the requirements:
    ```bash
+   pip install --upgrade pip
    pip install -r requirements.txt
    ```
 
-4. Launch the application:
+5. **Run the Server**:
+   Start the FastAPI server via Uvicorn:
    ```bash
    python run.py
    ```
+   The backend API will start running at **`http://localhost:8000`**.
 
 > [!NOTE]
-> On the first startup, the server automatically reads the `seed.py` file and populates MongoDB with initial mock categories, default admin logins, businesses, and test leads so you can explore immediately!
+> On the first startup, the server automatically triggers `seed.py` and populates the database with 19 initial categories, default admin logins, local businesses, and test leads so you can explore immediately!
 
 ---
 
-### 💻 Step 4: Launch the Frontend Client
+### 💻 Step 2: Start the Frontend Client (React + Vite)
 
-1. Open a new terminal window at the root of the project and navigate to `Frontend`:
+1. **Navigate to the Frontend directory**:
+   Open a new terminal window at the project root and run:
    ```bash
    cd Frontend
    ```
 
-2. Install dependencies:
+2. **Configure Frontend Environment**:
+   Ensure you have a `.env` file in the `Frontend` folder containing:
+   ```env
+   VITE_API_URL=http://localhost:8000/api
+   ```
+
+3. **Install Node Modules**:
+   Install the required NPM packages:
    ```bash
    npm install
    ```
 
-3. Start the Vite development server:
+4. **Launch the Development Server**:
    ```bash
    npm run dev
    ```
-
-4. Access the portal at **`http://localhost:5173`**.
+   The frontend application will boot up and be accessible at **`http://localhost:5173`**.
 
 ---
 
-## 🔐 Default Admin Credentials
+## 🔐 Pre-seeded Admin Credentials
 
-For full management portal access, log in using the pre-seeded admin credentials:
+Log in using the pre-seeded credentials to access administrative dashboard capabilities:
 
 > [!IMPORTANT]
 > * **Admin Email**: `admin@rightads.digital`
 > * **Admin Password**: `Admin@123`
 > 
-> *To access: Sign in with the details above, click the profile circle in the top right, and select **Admin Panel**.*
+> *To access the admin suite: Sign in with the details above, click your profile avatar in the navigation bar, and select **Admin Panel**.*
 
 ---
 
-## 🛠️ Verification & Test Plan
+## 🧪 Verification & Testing
 
-### Automatic API Testing
-Verify all server endpoints return successfully by visiting:
-* **Interactive API Playground**: [http://localhost:8000/docs](http://localhost:8000/docs) (Swagger UI)
-* **Alternative Schema Spec**: [http://localhost:8000/redoc](http://localhost:8000/redoc) (ReDoc)
-
-### Frontend Verification
-Confirm the client successfully connects:
-1. Try performing a search query for `"Tikka & Curry"` in the location `"Hyderabad"`.
-2. Access the **Browse Categories** section and click on **Restaurants**.
-3. Attempt to submit a new listing request via **List Your Business** and check if it appears in the **Admin Panel** under *Applications*.
+* **API Swagger Sandbox**: Visit [http://localhost:8000/docs](http://localhost:8000/docs) to visually inspect and test API routes.
+* **API ReDoc Spec**: Alternate clean documentation is available at [http://localhost:8000/redoc](http://localhost:8000/redoc).
+* **Verify Client Connection**: Search for `"Tikka & Curry"` under `"Hyderabad"` or browse the `"Restaurants"` category to ensure correct MongoDB querying and API connectivity.

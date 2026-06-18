@@ -38,8 +38,8 @@
   gap: 16px;
   transition: height 0.3s ease;
 }
-.nb--expanded .nb__top { height: 80px; }
-.nb--compact  .nb__top { height: 64px; }
+.nb--expanded .nb__top { height: 81px; }
+.nb--compact  .nb__top { height: 65px; }
 
 /* Logo */
 .nb__logo { flex-shrink: 0; display: flex; align-items: center; text-decoration: none; }
