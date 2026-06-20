@@ -156,6 +156,7 @@ Before running the application, make sure you have the following installed on yo
    Start the FastAPI server via Uvicorn:
    ```bash
    python run.py
+   python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
    ```
    The backend API will start running at **`http://localhost:8000`**.
 

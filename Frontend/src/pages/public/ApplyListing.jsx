@@ -7,6 +7,34 @@ import {
 import toast from 'react-hot-toast';
 import {getCategories, getSubcategories, submitBusiness,  uploadImage } from '../../services/api';
 const steps = ['Business Info', 'Location', 'Media & Socials', 'Review'];
+
+// ✅ Defined OUTSIDE the component so React doesn't recreate it on every render
+// (recreating it inside would cause inputs to lose focus on every keystroke)
+const InputField = ({ name, label, type = 'text', placeholder, icon: Icon, required, form, errors, onChange }) => (
+  <div>
+    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+      {label}{required && <span className="text-red-500 ml-1">*</span>}
+    </label>
+    <div className="relative">
+      {Icon && <Icon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />}
+      <input
+        type={type}
+        name={name}
+        value={form[name] ?? ''}
+        onChange={onChange}
+        placeholder={placeholder}
+        className={`w-full ${Icon ? 'pl-9' : 'pl-3'} pr-3 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 transition-colors ${
+          errors[name] ? 'border-red-300 focus:ring-red-200' : 'border-slate-200 focus:ring-blue-500 focus:border-transparent'
+        }`}
+      />
+    </div>
+    {errors[name] && (
+      <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+        <AlertCircle size={11} /> {errors[name]}
+      </p>
+    )}
+  </div>
+);
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 
@@ -28,6 +56,10 @@ const ApplyListing = () => {
   const filteredSubs = selectedCatObj
     ? subcategories?.filter(s => s.categoryId === selectedCatObj.id || s.categoryId === selectedCatObj._id) || []
     : [];
+
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStep, setUploadStep] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
 
@@ -142,6 +174,9 @@ const ApplyListing = () => {
   const handleSubmit = async () => {
 
     setLoading(true);
+    setIsUploading(true);
+    setUploadStep("Uploading Logo...");
+    setUploadProgress(5);
 
     try {
 
@@ -153,11 +188,22 @@ const ApplyListing = () => {
 
       if (form.logo) {
 
-        const logoRes = await uploadImage(form.logo);
+        setUploadStep("Uploading Logo...");
+        setUploadProgress(10);
+
+        const logoRes = await uploadImage(
+          form.logo,
+          (percent) => {
+
+              setUploadProgress(Math.round(percent * 0.35));
+          }
+      );
 
         if (logoRes.success) {
-          logoUrl = logoRes.url;
+            logoUrl = logoRes.url;
         }
+
+        setUploadProgress(35);
 
       }
 
@@ -166,18 +212,44 @@ const ApplyListing = () => {
       // ===========================
 
       const galleryImages = [];
+      setUploadStep("Uploading Gallery Images...");
+      setUploadProgress(40);
 
       if (form.gallery.length > 0) {
 
-        for (const image of form.gallery) {
+        const progressMap = {};
 
-          const res = await uploadImage(image);
+          const uploadPromises = form.gallery.map((image, index) => {
 
-          if (res.success) {
-            galleryImages.push(res.url);
-          }
+              return uploadImage(
+                  image,
+                  (percent) => {
 
-        }
+                      progressMap[index] = percent;
+
+                      const totalProgress =
+                          Object.values(progressMap).reduce(
+                              (sum, value) => sum + value,
+                              0
+                          );
+
+                      const averageProgress =
+                          totalProgress / form.gallery.length;
+
+                      setUploadProgress(
+                          Math.round(
+                              35 + averageProgress * 0.45
+                          )
+                      );
+
+                  }
+              ).then(res => res.url);
+
+          });
+
+          const uploadedUrls = await Promise.all(uploadPromises);
+
+          galleryImages.push(...uploadedUrls);
 
       }
 
@@ -231,6 +303,8 @@ const ApplyListing = () => {
       });
 
       setSubmitted(true);
+      setUploadStep("Saving Business...");
+      setUploadProgress(90);
 
       toast.success("Application submitted successfully!");
 
@@ -244,37 +318,19 @@ const ApplyListing = () => {
     }
     finally {
 
+      setTimeout(() => {
+          setIsUploading(false);
+          setUploadProgress(0);
+          setUploadStep("");
+      }, 800);
+
       setLoading(false);
 
     }
 
   };
 
-  const InputField = ({ name, label, type = 'text', placeholder, icon: Icon, required }) => (
-    <div>
-      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-        {label}{required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      <div className="relative">
-        {Icon && <Icon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />}
-        <input
-          type={type}
-          name={name}
-          value={form[name]}
-          onChange={handleChange}
-          placeholder={placeholder}
-          className={`w-full ${Icon ? 'pl-9' : 'pl-3'} pr-3 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 transition-colors ${
-            errors[name] ? 'border-red-300 focus:ring-red-200' : 'border-slate-200 focus:ring-blue-500 focus:border-transparent'
-          }`}
-        />
-      </div>
-      {errors[name] && (
-        <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-          <AlertCircle size={11} /> {errors[name]}
-        </p>
-      )}
-    </div>
-  );
+
 
   if (submitted) {
     return (
@@ -356,10 +412,10 @@ const ApplyListing = () => {
                 <Building2 size={18} className="text-blue-600" /> Business Information
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InputField name="businessName" label="Business Name" icon={Building2} placeholder="Your Business Name" required />
-                <InputField name="ownerName" label="Owner Name" icon={User} placeholder="Full Name" required />
-                <InputField name="email" label="Email Address" type="email" icon={Mail} placeholder="business@email.com" required />
-                <InputField name="phone" label="Phone Number" type="tel" icon={Phone} placeholder="+91 98765 43210" required />
+                <InputField name="businessName" label="Business Name" icon={Building2} placeholder="Your Business Name" required form={form} errors={errors} onChange={handleChange} />
+                <InputField name="ownerName" label="Owner Name" icon={User} placeholder="Full Name" required form={form} errors={errors} onChange={handleChange} />
+                <InputField name="email" label="Email Address" type="email" icon={Mail} placeholder="business@email.com" required form={form} errors={errors} onChange={handleChange} />
+                <InputField name="phone" label="Phone Number" type="tel" icon={Phone} placeholder="+91 98765 43210" required form={form} errors={errors} onChange={handleChange} />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -438,12 +494,12 @@ const ApplyListing = () => {
               <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                 <MapPin size={18} className="text-blue-600" /> Location Details
               </h2>
-              <InputField name="address" label="Full Address" icon={MapPin} placeholder="Street, Building, Area" required />
+              <InputField name="address" label="Full Address" icon={MapPin} placeholder="Street, Building, Area" required form={form} errors={errors} onChange={handleChange} />
               <div className="grid grid-cols-2 gap-4">
-                <InputField name="city" label="City" placeholder="Mumbai" required />
-                <InputField name="state" label="State" placeholder="Maharashtra" required />
+                <InputField name="city" label="City" placeholder="Mumbai" required form={form} errors={errors} onChange={handleChange} />
+                <InputField name="state" label="State" placeholder="Maharashtra" required form={form} errors={errors} onChange={handleChange} />
               </div>
-              <InputField name="website" label="Website URL" icon={Globe} placeholder="https://yourwebsite.com" />
+              <InputField name="website" label="Website URL" icon={Globe} placeholder="https://yourwebsite.com" form={form} errors={errors} onChange={handleChange} />
             </div>
           )}
 
@@ -488,7 +544,7 @@ const ApplyListing = () => {
                     { name: 'linkedin', placeholder: 'LinkedIn URL' },
                     { name: 'twitter', placeholder: 'Twitter URL' },
                   ].map(({ name, placeholder }) => (
-                    <InputField key={name} name={name} label={name.charAt(0).toUpperCase() + name.slice(1)} placeholder={placeholder} />
+                    <InputField key={name} name={name} label={name.charAt(0).toUpperCase() + name.slice(1)} placeholder={placeholder} form={form} errors={errors} onChange={handleChange} />
                   ))}
                 </div>
               </div>
@@ -533,6 +589,34 @@ const ApplyListing = () => {
                   </p>
                 </div>
               </div>
+            </div>
+          )}
+          {isUploading && (
+            <div className="mb-6">
+
+              <div className="flex justify-between text-sm mb-2">
+
+                <span className="font-semibold">
+                  {uploadStep}
+                </span>
+
+                <span>
+                  {uploadProgress}%
+                </span>
+
+              </div>
+
+              <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
+
+                <div
+                  className="h-full bg-blue-600 transition-all duration-300"
+                  style={{
+                    width: `${uploadProgress}%`
+                  }}
+                />
+
+              </div>
+
             </div>
           )}
 
