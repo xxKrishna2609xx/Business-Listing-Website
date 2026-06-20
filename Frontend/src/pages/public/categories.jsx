@@ -32,7 +32,7 @@ import {
   Train,
   Bus,
 } from "lucide-react";
-import { getCategories } from "../../services/api";
+import { getCategories, getSubcategories} from "../../services/api";
 
 const iconMap = {
   UtensilsCrossed, Hotel, Sparkles, Home, Heart, GraduationCap, Key,
@@ -40,9 +40,9 @@ const iconMap = {
   PartyPopper, Car, Truck, Send, Grid,
   ShoppingBag, Apple, Milk, Pill, Droplet, WashingMachine, Plane, Train, Bus
 };
-
 const Categories = () => {
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -52,7 +52,13 @@ const Categories = () => {
         setIsLoading(false);
       })
       .catch(() => setIsLoading(false));
+
+      getSubcategories() .then ((data)=> {
+        setSubcategories(data);
+      })
   }, []);
+
+
 
   // Professional Layout Skeleton with matching margin layouts
   if (isLoading) {
@@ -76,6 +82,11 @@ const Categories = () => {
   return (
     /* mx-auto max-w-7xl px-* centers your grid perfectly with symmetric margins */
     <div className="mx-auto max-w-7xl my-10 px-4 sm:px-6 lg:px-8 bg-slate-50">
+    <div className="mb-2 flex items-center justify-between ">
+      <h2 className="text-xl font-bold text-black-100">
+        Categories ({categories.length})
+      </h2>
+    </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {categories.map((cat, index) => {
           const Icon = iconMap[cat.icon] || Building2;
