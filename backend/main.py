@@ -28,7 +28,7 @@ load_dotenv()
 app = FastAPI(title="Business Listing API")
 
 # Setup CORS
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
