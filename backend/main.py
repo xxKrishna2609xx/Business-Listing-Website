@@ -1,17 +1,26 @@
 from bson import ObjectId
 import uvicorn
-from fastapi import FastAPI, HTTPException,Depends
+from fastapi import FastAPI, HTTPException, Depends,UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import time
 from dotenv import load_dotenv
 from pydantic import BaseModel
-from typing import List, Optional
-from pydantic import BaseModel
-from jose import jwt
+from typing import Optional
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from datetime import datetime
+from fastapi.security import HTTPBearer
+from auth import (
+    create_access_token,
+    create_refresh_token,
+    get_current_user,
+    get_admin_user,
+    refresh_access_token
+)
+from indexes import create_indexes
+
+from utils.cloudflare_r2 import upload_file
 
 
 load_dotenv()
@@ -47,6 +56,9 @@ pwd_context = CryptContext(
 
 @app.on_event("startup")
 async def startup_db_client():
+    
+    await create_indexes(db) # indexing--------
+
     print("Connected to MongoDB database!")
 
 @app.on_event("shutdown")
@@ -148,64 +160,6 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
 
-# get user via tokens-----
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(
-        security
-    )
-):
-
-    try:
-
-        token = credentials.credentials
-
-        payload = jwt.decode(
-            token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
-        )
-
-        user_id = payload["user_id"]
-
-        user = await db.users.find_one(
-            {
-                "_id": ObjectId(user_id)
-            }
-        )
-
-        if not user:
-            raise HTTPException(
-                status_code=401,
-                detail="User not found"
-            )
-
-        return user
-
-    except:
-
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid token"
-        )
-
-# Admin Middleware---------*-------------------
-async def get_admin_user(
-    current_user=Depends(
-        get_current_user
-    )
-):
-
-    if (
-        current_user.get("role")
-        != "admin"
-    ):
-        raise HTTPException(
-            status_code=403,
-            detail="Admin access required"
-        )
-
-    return current_user
-
 
 @app.get("/api/categories")
 async def get_categories():
@@ -250,36 +204,144 @@ async def get_business(id: str):
 
     return serializeDict(business)
 
+@app.put("/api/business/{business_id}")
+async def update_business(
+    business_id: str,
+    data: dict,
+    current_user=Depends(get_current_user)
+):
+    try:
+        business = await db.businesses.find_one(
+            {"_id": ObjectId(business_id)}
+        )
+    except:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid business id"
+        )
+
+    if not business:
+        raise HTTPException(
+            status_code=404,
+            detail="Business not found"
+        )
+
+    if business["email"] != current_user["email"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Not authorized"
+        )
+
+    data["updatedAt"] = datetime.utcnow().isoformat()
+
+    await db.businesses.update_one(
+        {"_id": ObjectId(business_id)},
+        {
+            "$set": data
+        }
+    )
+
+    return {
+        "message": "Business updated successfully"
+    }
+
+@app.get("/api/my-businesses")
+async def get_my_businesses(current_user=Depends(get_current_user)):
+
+    businesses = await db.businesses.find(
+        {
+            "email": current_user["email"]
+        }
+    ).sort("createdAt", -1).to_list(None)
+
+    return [serializeDict(b) for b in businesses]
+
 @app.get("/api/search")
 async def search_businesses(
     query: str = "",
     city: str = "",
-    pincode: str = ""
+    pincode: str = "",
+    categoryId: str = "",
+    subcategoryId: str = "",
+    brand: str = "",
+    page: int = 1,
+    limit: int = 6
 ):
-    filter_query = {}
+    # filter_query = {}
+  
+    filter_query = {"status": "APPROVED"}
 
     if query:
+
         filter_query["$or"] = [
-            {"businessName": {"$regex": query, "$options": "i"}},
-            {"description": {"$regex": query, "$options": "i"}},
-            {"categoryName": {"$regex": query, "$options": "i"}},
-            {"subcategoryName": {"$regex": query, "$options": "i"}},
-            {"city": {"$regex": query, "$options": "i"}},
-            {"state": {"$regex": query, "$options": "i"}}
+            {
+                "businessName": {
+                    "$regex": query,
+                    "$options": "i"
+                }
+            },
+            {
+                "description": {
+                    "$regex": query,
+                    "$options": "i"
+                }
+            },
+            {
+                "categoryName": {
+                    "$regex": query,
+                    "$options": "i"
+                }
+            },
+            {
+                "subcategoryName": {
+                    "$regex": query,
+                    "$options": "i"
+                }
+            },
+            {
+                "city": {
+                    "$regex": query,
+                    "$options": "i"
+                }
+            },
+            {
+                "state": {
+                    "$regex": query,
+                    "$options": "i"
+                }
+            }
         ]
 
     if city:
+
         filter_query["city"] = {
             "$regex": city,
             "$options": "i"
         }
-    businesses = await db.businesses.find(
-        filter_query
-    ).to_list(1000)
 
-    return serializeList(
-        businesses
-    )
+    if categoryId:
+
+        filter_query["categoryId"] = categoryId
+
+
+    if subcategoryId:
+        filter_query["subcategoryId"] = subcategoryId
+
+    if brand:
+
+        filter_query["brands"] = brand
+    skip = (page - 1) * limit
+    
+    total = await db.businesses.count_documents(filter_query)
+
+    businesses = await db.businesses.find(filter_query).skip(skip).limit(limit).to_list(length=limit)
+    return {
+        "data": serializeList(businesses),
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "totalPages": (total + limit - 1) // limit
+    }
 
 
 @app.post("/api/leads")
@@ -334,7 +396,7 @@ async def delete_lead(id: str):
     return {
         "success": True
     }
-
+# Rating calculate---*-----*-------
 def calculate_rating(reviews):
 
     review_count = len(reviews)
@@ -650,12 +712,14 @@ async def get_applications(
 @app.get("/api/applications/user/{email}")
 async def get_user_applications(email: str):
 
-    applications = await db.applications.find(
-        {"email": email}
-    ).to_list(1000)
+    applications = await db.applications.find({
+        "email": email,
+        "status": {
+            "$in": ["PENDING", "REJECTED"]
+        }
+    }).to_list(1000)
 
     return serializeList(applications)
-
 
 @app.put("/api/admin/applications/{id}/approve")
 async def approve_application(
@@ -739,7 +803,7 @@ async def approve_application(
                 []
             ),
 
-        "verified": False,
+        "verified": False, 
         "featured": False,
 
         "status": "APPROVED",
@@ -751,13 +815,8 @@ async def approve_application(
             datetime.utcnow().isoformat()
     })
 
-    await db.applications.update_one(
-        {"_id": ObjectId(id)},
-        {
-            "$set": {
-                "status": "APPROVED"
-            }
-        }
+    await db.applications.delete_one(
+        {"_id": ObjectId(id)}
     )
 
     return {
@@ -960,96 +1019,14 @@ async def get_my_business_leads(
 
     return serializeList(leads)
 
-
-
-def create_access_token(user):
-
-    payload = {
-        "user_id": str(user["_id"]),
-        "email": user["email"],
-        "role": user.get("role", "user"),
-        "exp": datetime.utcnow() + timedelta(minutes=15)
-    }
-
-    return jwt.encode(
-        payload,
-        SECRET_KEY,
-        algorithm=ALGORITHM
-    )
-
-
-def create_refresh_token(user):
-
-    payload = {
-        "user_id": str(user["_id"]),
-        "exp": datetime.utcnow() + timedelta(days=7)
-    }
-
-    return jwt.encode(
-        payload,
-        REFRESH_SECRET_KEY,
-        algorithm=ALGORITHM
-    )
-
 @app.post("/api/auth/refresh")
-async def refresh_access_token(
+async def refresh_token(
     body: RefreshTokenRequest
 ):
-
-    try:
-
-        payload = jwt.decode(
-            body.refresh_token,
-            REFRESH_SECRET_KEY,
-            algorithms=[ALGORITHM]
-        )
-
-        user_id = payload["user_id"]
-
-        user = await db.users.find_one(
-            {
-                "_id": ObjectId(user_id)
-            }
-        )
-
-        if not user:
-            raise HTTPException(
-                status_code=401,
-                detail="User not found"
-            )
-
-        if (
-            user.get("refreshToken")
-            != body.refresh_token
-        ):
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid refresh token"
-            )
-
-        new_access_token = (
-            create_access_token(user)
-        )
-
-        return {
-            "access_token":
-                new_access_token
-        }
-
-    except jwt.ExpiredSignatureError:
-
-        raise HTTPException(
-            status_code=401,
-            detail="Refresh token expired"
-        )
-
-    except Exception:
-
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid refresh token"
-        )
-
+    return await refresh_access_token(
+        body,
+        db
+    )
 
 
 @app.get("/api/me")
@@ -1108,10 +1085,28 @@ async def get_public_stats():
         
     return {
         "listingsCount": listings_count,
-        "verifiedCount": verified_count,
-        "categoriesCount": categories_count,
+        "verifiedCount": f"{verified_count} +",
+        "categoriesCount": f"{categories_count} +",
         "avgRating": f"{avg_rating}★",
         "monthlyUsers": "10K+",  # Static estimate
+    }
+
+
+@app.post("/api/upload")
+async def upload_image(file: UploadFile = File(...)):
+    # start = time.time()
+    if not file.content_type.startswith("image/"):
+        return {
+            "success": False,
+            "message": "Only image files are allowed."
+        }
+
+    url = upload_file(file)
+    # print(f"Upload Time: {time.time() - start:.3f} sec")
+
+    return {
+        "success": True,
+        "url": url
     }
 
 

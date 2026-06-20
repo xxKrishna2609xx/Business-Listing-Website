@@ -122,24 +122,36 @@ export const getFeaturedBusinesses = async () => {
 export const getBusinessById = async (id) => {
   const { data } = await api.get(`/businesses/${id}`);
   return data;
+}; 
+
+export const getMyBusinesses = async () => {
+  const { data } = await api.get("/my-businesses");
+  return data;
 };
 
-export const searchBusinesses = async (
-  query = '',
-  city = '',
-  pincode = ''
-) => {
+export const searchBusinesses = async ({
+  query = "",
+  city = "",
+  pincode = "",
+  categoryId = "",
+  subcategoryId = "",
+  brand = "",
+  page = 1,
+  limit = 6,
+} = {}) => {
 
-  const { data } = await api.get(
-    '/search',
-    {
-      params: {
-        query,
-        city,
-        pincode
-      }
-    }
-  );
+  const { data } = await api.get("/search", {
+    params: {
+      query,
+      city,
+      pincode,
+      categoryId,
+      subcategoryId,
+      brand,
+      page,
+      limit,
+    },
+  });
 
   return data;
 };
@@ -256,6 +268,16 @@ export const submitBusiness = async (
 
   const { data } = await api.post(
     "/business/apply",
+    businessData
+  );
+
+  return data;
+};
+
+export const updateBusiness = async (id, businessData) => {
+
+  const { data } = await api.put(
+    `/business/${id}`,
     businessData
   );
 
@@ -449,5 +471,37 @@ export const getQuickServices = async () => {
 
 export const getPublicStats = async () => {
   const { data } = await api.get('/public-stats');
+  return data;
+};
+
+export const uploadImage = async (file, onProgress) => {
+
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  const { data } = await api.post(
+    "/upload",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+
+      onUploadProgress: (event) => {
+
+        if (!event.total) return;
+
+        const percent = Math.round(
+          (event.loaded * 100) / event.total
+        );
+
+        if (onProgress) {
+          onProgress(percent);
+        }
+      },
+    }
+  );
+
   return data;
 };

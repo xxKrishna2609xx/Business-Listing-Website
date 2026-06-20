@@ -14,6 +14,8 @@ const SearchResults = () => {
 
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [sortBy, setSortBy] = useState('rating');
   const [showFilters, setShowFilters] = useState(false);
@@ -23,14 +25,14 @@ const SearchResults = () => {
 
   const [query, setQuery] = useState('');
   const [city, setCity] = useState('');
-
+  const [pincode, setPincode] = useState('');
 
   const searchQuery = searchParams.get('query') || '';
   const searchCity = searchParams.get('city') || '';
   const searchPincode =searchParams.get('pincode') || '';
 
-  // Reset selected brand when query or category changes
   useEffect(() => {
+    setPage(1);
     setSelectedBrand('');
   }, [query, selectedCategory]);
   
@@ -41,7 +43,7 @@ const SearchResults = () => {
 
         const data =
           await getCategories();
-
+        setPage(1);
         setCategories(data);
 
       } catch (err) {
@@ -56,6 +58,7 @@ const SearchResults = () => {
     loadCategories();
 
   }, []);
+
   useEffect(() => {
     setQuery(
       searchParams.get('query') || ''
@@ -67,44 +70,44 @@ const SearchResults = () => {
 
   }, [searchParams]);
 
-
   useEffect(() => {
     const fetchResults = async () => {
       setLoading(true);
-      // console.log({
-      //   searchQuery,
-      //   searchCity,
-      //   searchPincode
-      // });
-      try {
-        const data = await searchBusinesses(searchQuery,searchCity,searchPincode);
-        // console.log("API DATA", data);
-        let filtered = data.filter(b => b.status === 'APPROVED');
-        if (selectedCategory) {
-          const matchedCat = categories.find(c => c.id === selectedCategory || c._id === selectedCategory);
-          if (matchedCat) {
-            filtered = filtered.filter(b => b.categoryId === matchedCat.id || b.categoryId === matchedCat._id);
-          } else {
-            filtered = filtered.filter(b => b.categoryId === selectedCategory);
-          }
-        }
-        
-        // Extract brands
-        const brandsSet = new Set();
-        filtered.forEach(b => {
-          if (b.brands) b.brands.forEach(br => brandsSet.add(br));
-        });
-        setAvailableBrands([...brandsSet]);
-        
-        if (selectedBrand) {
-          filtered = filtered.filter(b => b.brands?.includes(selectedBrand));
-        }
 
-        if (sortBy === 'rating') filtered.sort((a, b) => b.rating - a.rating);
-        else if (sortBy === 'reviews') filtered.sort((a, b) => b.reviewCount - a.reviewCount);
-        else if (sortBy === 'latest') filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      try {
+
+        const response = await searchBusinesses({
+              query: searchQuery,
+              city: searchCity,
+              pincode: searchPincode,
+              categoryId: selectedCategory,
+              subcategoryId: "",
+              brand: selectedBrand,
+              page,
+              limit: 6,
+            });
+
+        setTotalPages(response.totalPages);
+
+        let filtered = response.data;
+    
+        if (sortBy === "rating")
+          filtered.sort((a, b) => b.rating - a.rating);
+
+        else if (sortBy === "reviews")
+          filtered.sort(
+            (a, b) => b.reviewCount - a.reviewCount
+          );
+
+        else if (sortBy === "latest")
+          filtered.sort(
+            (a, b) =>
+              new Date(b.createdAt) -
+              new Date(a.createdAt)
+          );
 
         setResults(filtered);
+
       } catch (error) {
         console.error("Failed to load results", error);
       } finally {
@@ -112,17 +115,16 @@ const SearchResults = () => {
       }
     };
     fetchResults();
-  }, [searchParams, selectedCategory, selectedBrand, sortBy]);
+  }, [searchParams, selectedCategory, selectedBrand, sortBy, page]);
 
   const handleSearch = (e) => {
     e.preventDefault();
 
-    console.log('QUERY:', query);
-    console.log('CITY:', city);
-
+    setPage(1);
     setSearchParams({
       query,
-      city
+      city,
+      pincode
     });
   };
 
@@ -130,6 +132,7 @@ const SearchResults = () => {
     setSelectedCategory('');
     setSelectedBrand('');
     setCity('');
+    setPage(1);
     setSearchParams({ query });
   };
 
@@ -277,7 +280,51 @@ const SearchResults = () => {
               <BusinessCard key={biz.id} business={biz} featured={biz.featured} />
             ))}
           </div>
-        )}
+           )}
+            {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-10 mb-6 flex-wrap">
+
+                  <button
+                    onClick={() => setPage(page - 1)}
+                    disabled={page === 1}
+                    className={`px-4 py-2 rounded-lg border font-medium transition ${
+                      page === 1
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white hover:bg-blue-50 hover:border-blue-500"
+                    }`}
+                  >
+                    Previous
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setPage(index + 1)}
+                      className={`w-10 h-10 rounded-lg font-semibold transition ${
+                        page === index + 1
+                          ? "bg-blue-600 text-white"
+                          : "bg-white border hover:bg-blue-50"
+                      }`}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => setPage(page + 1)}
+                    disabled={page === totalPages}
+                    className={`px-4 py-2 rounded-lg border font-medium transition ${
+                      page === totalPages
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white hover:bg-blue-50 hover:border-blue-500"
+                    }`}
+                  >
+                    Next
+                  </button>
+
+                </div>
+              )}
       </div>
     </div>
   );

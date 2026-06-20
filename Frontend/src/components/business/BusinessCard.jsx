@@ -22,7 +22,7 @@ const BusinessCard = ({ business, featured = false }) => {
   };
 
   return (
-    <div className={`bg-white rounded-2xl border overflow-hidden card-hover group relative ${
+    <div className={`bg-white rounded-[10px] border overflow-hidden card-hover group relative ${
       featured ? 'border-blue-200 shadow-blue-50 shadow-lg' : 'border-slate-100 shadow-sm'
     }`}>
       {/* Bookmark Button */}
@@ -43,13 +43,15 @@ const BusinessCard = ({ business, featured = false }) => {
 
       {/* Featured Badge */}
       {featured && (
-        <div className="bg-gradient-to-r from-blue-600 to-teal-500 px-3 py-1.5 flex items-center gap-1.5">
-          <Sparkles size={12} className="text-yellow-300" />
-          <span className="text-white text-xs font-semibold tracking-wide">FEATURED</span>
+        <div className="absolute top-0 left-0 z-10 rounded-tl-xl rounded-br-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-1 flex items-center gap-1.5 shadow-sm">
+          <Sparkles size={11} className="text-white" />
+          <span className="text-white text-[10px] font-bold tracking-wider uppercase ">
+            FEATURED
+          </span>
         </div>
       )}
 
-      <div className="p-5">
+      <div className="p-5 mt-2">
         {/* Header */}
         <div className="flex items-start gap-3 mb-3">
           <div className="relative flex-shrink-0">
@@ -93,7 +95,7 @@ const BusinessCard = ({ business, featured = false }) => {
         </p>
 
         {/* Brands Serviced */}
-        {brands && brands.length > 0 && (
+        {/* {brands && brands.length > 0 ? (
           <div className="flex flex-wrap gap-1 mb-3">
             {brands.slice(0, 3).map((brand, i) => (
               <span key={i} className="text-[10px] font-bold bg-slate-50 border border-slate-200 text-slate-500 px-1.5 py-0.5 rounded-lg">
@@ -106,7 +108,25 @@ const BusinessCard = ({ business, featured = false }) => {
               </span>
             )}
           </div>
-        )}
+        ) : verified ? (
+
+          <div className="flex flex-wrap gap-1 mb-3">
+            <span className="text-[10px] font-bold bg-emerald-50 border border-emerald-200 text-emerald-600 px-1.5 py-0.5 rounded-lg flex items-center gap-1">
+              
+              <span className="w-1 h-1 rounded-full bg-emerald-500 inline-block" />
+              Verified Fit
+            </span>
+          </div>
+        ) : (
+         
+            <div className="flex flex-wrap gap-1 mb-3">
+            <span className="text-[10px] font-bold bg-red-50 border border-red-200 text-red-500 px-1.5 py-0.5 rounded-lg flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-red-500 inline-block" />
+              Not Verified Fit
+            </span>
+          </div>
+        )} */}
+        
 
         {/* Meta */}
         <div className="flex items-center justify-between mb-4">

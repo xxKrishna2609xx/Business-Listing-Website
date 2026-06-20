@@ -30,6 +30,10 @@ const BusinessDetails = () => {
   const { user, isLoggedIn, toggleBookmark } = useAuth();
   const isBookmarked = user?.bookmarks?.includes(id) || false;
 
+  const [showGallery, setShowGallery] = useState(false);
+  const [popupImage, setPopupImage] = useState("");
+
+
   const handleBookmarkToggle = () => {
     if (!isLoggedIn) {
       toast.error('Please sign in to save listings.');
@@ -191,12 +195,20 @@ const BusinessDetails = () => {
 
                 <img
                   src={
-                    business.galleryImages?.[activeImage] ||
-                    business.logoUrl ||
-                    "/default-logo.jpg"
+                    business.galleryImages?.length
+                      ? business.galleryImages[activeImage]
+                      : business.logoUrl || "/default-logo.jpg"
                   }
                   alt={business.businessName}
-                  className="w-full h-54 md:h-50 object-cover"
+                  onClick={() => {
+                    setPopupImage(
+                      business.galleryImages?.length
+                        ? business.galleryImages[activeImage]
+                        : business.logoUrl
+                    );
+                    setShowGallery(true);
+                  }}
+                  className="w-full h-64 md:h-80 object-cover cursor-pointer"
                 />
 
                 {business.featured && (
@@ -213,7 +225,10 @@ const BusinessDetails = () => {
                         key={index}
                         src={img}
                         alt=""
-                        onClick={() => setActiveImage(index)}
+                        onClick={() => {
+                          setActiveImage(index);
+                          setPopupImage(img);
+                        }}
                         className={`w-16 h-16 rounded-xl object-cover cursor-pointer border-2 flex-shrink-0 ${activeImage === index
                             ? "border-white"
                             : "border-transparent opacity-80"
@@ -234,7 +249,13 @@ const BusinessDetails = () => {
                     <img
                       src={business.logoUrl || "/default-logo.jpg"}
                       alt={business.businessName}
-                      className="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-lg bg-white"
+                      onClick={() => {
+                        if (business.logoUrl) {
+                          setPopupImage(business.logoUrl);
+                          setShowGallery(true);
+                        }
+                      }}
+                      className="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-lg bg-white cursor-zoom-in"
                     />
 
                     {business.verified && (
@@ -280,11 +301,12 @@ const BusinessDetails = () => {
                         />
 
                         <span className="font-semibold text-slate-900">
-                          {business.rating || 0}
+                          {business.reviewCount > 0 ? business.rating.toFixed(1): "New"}
                         </span>
 
                         <span className="text-slate-500">
-                          ({business.reviewCount || 0} reviews)
+                          {business.reviewCount === 0 ? "(No reviews yet)" 
+                                    :  `(${business.reviewCount} review)` } 
                         </span>
 
                       </div>
@@ -374,7 +396,9 @@ const BusinessDetails = () => {
                   />
 
                   <span className="font-semibold text-slate-900">
-                    {business?.rating || 0}
+                    {business.reviewCount > 0
+                      ? business.rating.toFixed(1)
+                      : "New"}
                   </span>
 
                   <span className="text-slate-500 text-sm">
@@ -594,7 +618,7 @@ const BusinessDetails = () => {
               </div>
             </div>
             {/* Social */}
-            {business.socialMediaLinks && Object.keys(business.socialMediaLinks).length > 0 && (
+            {business.socialMediaLinks && Object.values(business.socialMediaLinks).some(Boolean) && (
               <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                 <h2 className="font-bold text-slate-900 mb-4">Social Media</h2>
                 <div className="flex gap-3">
@@ -632,7 +656,26 @@ const BusinessDetails = () => {
           </div>
         </div>
       </div>
+      {showGallery && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center"
+          onClick={() => setShowGallery(false)}
+        >
+          <button
+            className="absolute top-5 right-6 text-white text-5xl"
+            onClick={() => setShowGallery(false)}
+          >
+            ×
+          </button>
 
+          <img
+            src={popupImage}
+            alt=""
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-[70vw] max-h-[90vh] rounded-xl shadow-2xl"
+          />
+        </div>
+      )}
       <LeadFormModal
         business={business}
         isOpen={leadModalOpen}

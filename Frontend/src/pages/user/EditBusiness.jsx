@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+
 import {
   Building2, User, Mail, Phone, MapPin, Globe, FileText,
   Upload, CheckCircle, ChevronRight, Sparkles, AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import {getCategories, getSubcategories, submitBusiness,  uploadImage } from '../../services/api';
+import {getCategories, getSubcategories, submitBusiness,  uploadImage, updateBusiness, getBusinessById } from '../../services/api';
 const steps = ['Business Info', 'Location', 'Media & Socials', 'Review'];
 import { useAuth } from '../../context/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate,useParams } from 'react-router-dom';
 
-const ApplyListing = () => {
+const EditBusiness = () => {
+  const { id } = useParams();
+
   const [currentStep, setCurrentStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -20,14 +23,70 @@ const ApplyListing = () => {
     businessName: '', ownerName: '', email: '', phone: '',
     categoryId: '', subcategoryId: '', address: '', city: '',
     state: '', website: '', description: '', logo: null, gallery: [],
-    facebook: '', instagram: '', linkedin: '', twitter: '',
+    facebook: '', instagram: '', linkedin: '', twitter: '', services: '',
   });
   const [errors, setErrors] = useState({});
 
   const selectedCatObj = categories.find(c => c.id === form.categoryId || c._id === form.categoryId);
-  const filteredSubs = selectedCatObj
-    ? subcategories?.filter(s => s.categoryId === selectedCatObj.id || s.categoryId === selectedCatObj._id) || []
-    : [];
+  const filteredSubs = selectedCatObj ? subcategories?.filter(s => s.categoryId === selectedCatObj.id || s.categoryId === selectedCatObj._id) || []: [];
+
+  const [existingLogo, setExistingLogo] = useState("");
+  const [existingGallery, setExistingGallery] = useState([]);
+
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStep, setUploadStep] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+
+
+  useEffect(() => {
+
+    const fetchBusiness = async () => {
+
+        try {  
+
+        const data = await getBusinessById(id);
+
+        setForm({
+            businessName: data.businessName || "",
+            ownerName: data.ownerName || "",
+            email: data.email || "",
+            phone: data.phone || "",
+
+            categoryId: data.categoryId || "",
+            subcategoryId: data.subcategoryId || "",
+
+            address: data.address || "",
+            city: data.city || "",
+            state: data.state || "",
+
+            website: data.website || "",
+            description: data.description || "",
+
+            services: data.services?.join(", ") || "",
+
+            instagram: data.socialMediaLinks?.instagram || "",
+            facebook: data.socialMediaLinks?.facebook || "",
+            linkedin: data.socialMediaLinks?.linkedin || "",
+            twitter: data.socialMediaLinks?.twitter || "",
+
+            logo: null,
+            gallery: []
+            });
+            setExistingLogo(data.logoUrl || "");
+            setExistingGallery(data.galleryImages || []);
+
+        } catch (err) {
+            toast.error(err || "Errro in fetchBusiness")
+            console.error(err);
+
+        }
+
+    };
+
+    fetchBusiness();
+
+    }, [id]);
+
 
   useEffect(() => {
 
@@ -142,6 +201,9 @@ const ApplyListing = () => {
   const handleSubmit = async () => {
 
     setLoading(true);
+    setIsUploading(true);
+    setUploadStep("Uploading Logo...");
+    setUploadProgress(5);
 
     try {
 
@@ -153,86 +215,128 @@ const ApplyListing = () => {
 
       if (form.logo) {
 
-        const logoRes = await uploadImage(form.logo);
+        setUploadStep("Uploading Logo...");
+        setUploadProgress(10);
+
+        const logoRes = await uploadImage(
+          form.logo,
+          (percent) => {
+
+              setUploadProgress(Math.round(percent * 0.35));
+          }
+      );
 
         if (logoRes.success) {
-          logoUrl = logoRes.url;
+            logoUrl = logoRes.url;
         }
 
-      }
+        setUploadProgress(35);
+    }
 
       // ===========================
       // Upload Gallery Images
       // ===========================
 
       const galleryImages = [];
+      setUploadStep("Uploading Gallery Images...");
+      setUploadProgress(40);
 
       if (form.gallery.length > 0) {
 
-        for (const image of form.gallery) {
+        const progressMap = {};
 
-          const res = await uploadImage(image);
+        const uploadPromises = form.gallery.map((image, index) => {
 
-          if (res.success) {
-            galleryImages.push(res.url);
-          }
+            return uploadImage(
+                image,
+                (percent) => {
 
-        }
+                    progressMap[index] = percent;
 
+                    const totalProgress =
+                        Object.values(progressMap).reduce(
+                            (sum, value) => sum + value,
+                            0
+                        );
+
+                    const averageProgress =
+                        totalProgress / form.gallery.length;
+
+                    setUploadProgress(
+                        Math.round(
+                            35 + averageProgress * 0.45
+                        )
+                    );
+
+                }
+            ).then(res => res.url);
+
+          });
+
+          const uploadedUrls = await Promise.all(uploadPromises);
+
+          galleryImages.push(...uploadedUrls);
       }
 
       // ===========================
 
       const selectedCategory = categories.find(
         c => c.id === form.categoryId || c._id === form.categoryId
-      );
+      );  
 
       const selectedSubcategory = subcategories.find(
-        s => s.id === form.subcategoryId || s._id === form.subcategoryId
+      s => s.id === form.subcategoryId || s._id === form.subcategoryId
       );
 
-      await submitBusiness({
+    const businessData = {
+      businessName: form.businessName,
+      ownerName: form.ownerName,
+      email: form.email,
+      phone: form.phone,
 
-        ownerName: form.ownerName,
-        email: form.email,
-        phone: form.phone,
+      categoryId: form.categoryId,
+      subcategoryId: form.subcategoryId,
 
-        businessName: form.businessName,
+      categoryName: selectedCategory?.name || "",
+      subcategoryName: selectedSubcategory?.name || "",
 
-        categoryId: form.categoryId,
-        subcategoryId: form.subcategoryId,
+      address: form.address,
+      city: form.city,
+      state: form.state,
 
-        categoryName: selectedCategory?.name || "",
-        subcategoryName: selectedSubcategory?.name || "",
+      website: form.website,
+      description: form.description,
 
-        address: form.address,
-        city: form.city,
-        state: form.state,
+      logoUrl: logoUrl || existingLogo,
 
-        website: form.website,
-        description: form.description,
+      galleryImages:
+        galleryImages.length > 0
+          ? galleryImages
+          : existingGallery,
 
-        // Cloudflare URLs
-        logoUrl,
-        galleryImages,
+      services: form.services
+        ? form.services.split(",").map(s => s.trim())
+        : [],
 
-        socialMediaLinks: {
-          instagram: form.instagram,
-          facebook: form.facebook,
-          linkedin: form.linkedin,
-          twitter: form.twitter
-        },
+      socialMediaLinks: {
+        facebook: form.facebook,
+        instagram: form.instagram,
+        linkedin: form.linkedin,
+        twitter: form.twitter,
+      }
+    };
 
-        services: (form.services || "")
-          .split(",")
-          .map(s => s.trim())
-          .filter(Boolean)
-
-      });
-
+    
+    setUploadStep("Saving Business...");
+    setUploadProgress(90);
+      
+    await updateBusiness(id, businessData);
+      
       setSubmitted(true);
+      setUploadProgress(100);
+      setUploadStep("Completed!");
 
-      toast.success("Application submitted successfully!");
+      toast.success("Business updated successfully!");
 
     }
     catch (err) {
@@ -243,6 +347,12 @@ const ApplyListing = () => {
 
     }
     finally {
+
+      setTimeout(() => {
+          setIsUploading(false);
+          setUploadProgress(0);
+          setUploadStep("");
+      }, 800);
 
       setLoading(false);
 
@@ -315,10 +425,7 @@ const ApplyListing = () => {
       <div className="max-w-2xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-semibold mb-3">
-            <Sparkles size={12} /> Free Business Listing
-          </div>
-          <h1 className="text-3xl font-black text-slate-900 mb-2">List Your Business</h1>
+          <h1 className="text-3xl font-black text-slate-900 mb-2">Edit Business</h1>
           <p className="text-slate-500 text-sm">Get discovered by thousands of potential customers</p>
         </div>
 
@@ -535,7 +642,34 @@ const ApplyListing = () => {
               </div>
             </div>
           )}
+          {isUploading && (
+          <div className="mb-6">
 
+            <div className="flex justify-between text-sm mb-2">
+
+              <span className="font-semibold">
+                {uploadStep}
+              </span>
+
+              <span>
+                {uploadProgress}%
+              </span>
+
+            </div>
+
+            <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
+
+              <div
+                className="h-full bg-blue-600 transition-all duration-300"
+                style={{
+                  width: `${uploadProgress}%`
+                }}
+              />
+
+            </div>
+
+          </div>
+        )}
           {/* Navigation Buttons */}
           <div className="flex justify-between mt-8 pt-5 border-t border-slate-100">
             <button
@@ -564,7 +698,7 @@ const ApplyListing = () => {
                 {loading ? (
                   <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Submitting...</>
                 ) : (
-                  <><CheckCircle size={15} /> Submit Application</>
+                  <><CheckCircle size={15} /> Save Changes</>
                 )}
               </button>
             )}
@@ -575,4 +709,4 @@ const ApplyListing = () => {
   );
 };
 
-export default ApplyListing;
+export default EditBusiness;

@@ -15,7 +15,7 @@ const Footer = () => {
   return (
     <footer className="bg-slate-900 text-slate-300">
       {/* CTA Strip */}
-      <div className="bg-gradient-to-r from-blue-600 to-teal-500">
+      {/* <div className="bg-gradient-to-r from-blue-600 to-teal-500">
         <div className="max-w-7xl mx-auto px-4 py-10 flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
             <h3 className="text-white text-xl font-bold">Ready to grow your business?</h3>
@@ -28,7 +28,7 @@ const Footer = () => {
             List Your Business Free <ArrowRight size={16} />
           </Link>
         </div>
-      </div>
+      </div> */}
 
       {/* Main Footer */}
       <div className="max-w-7xl mx-auto px-4 py-14">

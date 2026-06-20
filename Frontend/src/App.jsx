@@ -13,9 +13,11 @@ import SearchResults from './pages/public/SearchResults';
 import CategoryBrowse from './pages/public/CategoryBrowse';
 import BusinessDetails from './pages/public/BusinessDetails';
 import ApplyListing from './pages/public/ApplyListing';
+import EditBusiness from "./pages/user/EditBusiness";
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import UserDashboard from './pages/user/UserDashboard';
+import Categories from "./pages/public/Categories";
 
 // Admin Pages
 import AdminLogin from './pages/admin/AdminLogin';
@@ -24,6 +26,7 @@ import ManageApplications from './pages/admin/ManageApplications';
 import ManageListings from './pages/admin/ManageListings';
 import ManageCategories from './pages/admin/ManageCategories';
 import ManageLeads from './pages/admin/ManageLeads';
+
 
 // Protected Route for Admin
 const ProtectedRoute = ({ children }) => {
@@ -46,6 +49,8 @@ const UserProtectedRoute = ({ children }) => {
   );
   return user ? children : <Navigate to="/login" replace />;
 };
+
+
 
 // Public layout wrapper
 const PublicLayout = ({ children }) => {
@@ -74,6 +79,24 @@ function AppRoutes() {
       <Route path="/category/:categorySlug/:subcategorySlug" element={<PublicLayout><CategoryBrowse /></PublicLayout>} />
       <Route path="/business/:id" element={<PublicLayout><BusinessDetails /></PublicLayout>} />
       <Route path="/apply" element={<PublicLayout><UserProtectedRoute><ApplyListing /></UserProtectedRoute></PublicLayout>}/>
+      <Route
+        path="/categories"
+        element={
+          <PublicLayout>
+            <Categories />
+          </PublicLayout>
+        }
+      />
+      <Route
+        path="/dashboard/edit-business/:id"
+        element={
+          <PublicLayout>
+            <UserProtectedRoute>
+              <EditBusiness />
+            </UserProtectedRoute>
+          </PublicLayout>
+        }
+      />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
 

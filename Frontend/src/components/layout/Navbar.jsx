@@ -51,9 +51,7 @@ export default function Navbar() {
   const isHome       = pathname === '/';
   const isSearchPage = pathname === '/search';
 
-  // expanded = homepage before scroll; compact = scrolled or any other page
   const isCompact   = !isHome || scrolled;
-  // show compact search only on homepage-after-scroll — never on /search (BUG 2)
   const showCompact = isCompact && !isSearchPage;
 
   const pillRef = useRef(null);
@@ -63,7 +61,6 @@ export default function Navbar() {
 
 
 
-  // BUG 1 FIX: only track scroll for compact/expanded toggle — no hide behavior
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     onScroll();
@@ -137,7 +134,7 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Spacer on homepage so hero isn't hidden under fixed navbar */}
+      {/* Spacer on homepage so hero isnot hidden under fixed navbar */}
       {isHome && (
         <div style={{
           height: isCompact ? 64 : 160,

@@ -9,7 +9,8 @@
     getUserApplications,
     getUserLeads,
     getBusinesses,
-    getMyBusinessLeads
+    getMyBusinessLeads,
+    getMyBusinesses
   } from '../../services/api';
 
 
@@ -19,6 +20,7 @@
     const [activeTab, setActiveTab] = useState('profile');
     const [applications, setApplications] = useState([]);
     const [businesses, setBusinesses] = useState([]);
+    const [myBusinesses, setMyBusinesses] = useState([]);
     // Profile editing state
     const [name, setName] = useState(user?.name || '');
     const [phone, setPhone] = useState(user?.phone || '');
@@ -44,7 +46,15 @@
           setMyLeads(userLeads);
         }
       };
-      
+      const fetchMyBusinesses = async () => {
+        try {
+          const data = await getMyBusinesses();
+          setMyBusinesses(data);
+          
+        } catch (err) {
+          console.error(err);
+        }
+      };
       const loadApplications = async () => {
         
         if (!user?.email) return;
@@ -104,6 +114,7 @@
     loadApplications();
     loadBusinesses();
     loadReceivedLeads();
+    fetchMyBusinesses();
     }, [user]);
 
 
@@ -155,7 +166,7 @@
     // Get bookmarked businesses
     const bookmarkedIds = user?.bookmarks || [];
     const bookmarkedBusinesses = businesses.filter(b => bookmarkedIds.includes(b.id));
-
+    
     return (
       <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
@@ -197,7 +208,8 @@
                     { id: 'profile', label: 'My Profile', icon: User },
                     { id: 'bookmarks', label: `Saved Listings (${bookmarkedIds.length})`, icon: Heart },
                     {id: 'receivedLeads',label: `Received Leads (${receivedLeads.length})`,icon: Send},
-                    { id: 'My Applications', label: `My Applications (${applications.length})`, icon: Send },
+                    { id: 'My Businesses', label: `My Businesses (${myBusinesses.length})`, icon: Building2 },
+                    { id: 'My Applications', label: `Pending Applications (${applications.length})`, icon: Send },
                     { id: 'leads', label: `Quote Requests (${myLeads.length})`, icon: Send },
                   ].map(item => {
                     const Icon = item.icon;
@@ -356,11 +368,12 @@
                     ) : (
 
                       applications.map(app => (
-                        
+                       
                        <div
                         key={app._id}
                         className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all"
                       >
+                         
                         <div className="flex items-start justify-between">
                           <div>
                             <h3 className="font-bold text-slate-900">
@@ -407,6 +420,75 @@
                         )}
                       </div>
     
+                      ))
+
+                    )}
+
+                  </div>
+                )}
+
+                {activeTab === "My Businesses" && (
+                  <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+
+                    {myBusinesses.length === 0 ? (
+
+                      <div className="bg-white rounded-xl p-6 text-center">
+                        No approved businesses yet.
+                      </div>
+
+                    ) : (
+
+                      myBusinesses.map(business => (
+
+                        <div
+                          key={business._id}
+                          className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all"
+                        >
+
+                          <div className="flex items-start justify-between">
+
+                            <div>
+
+                              <h3 className="font-bold text-slate-900">
+                                {business.businessName}
+                              </h3>
+
+                              <p className="text-sm text-slate-500 mt-1">
+                                {business.categoryName} • {business.subcategoryName}
+                              </p>
+
+                              <p className="text-xs text-slate-400 mt-2">
+                                Approved
+                              </p>
+
+                            </div>
+
+                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                              APPROVED
+                            </span>
+
+                          </div>
+
+                          <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap gap-3">
+
+                            <Link
+                              to={`/business/${business._id}`}
+                              className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition"
+                            >
+                              👁 View Listing
+                            </Link>
+
+                            <Link
+                              to={`/dashboard/edit-business/${business._id}`}
+                              className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition"
+                            >
+                              ✏ Edit Business
+                            </Link>
+
+                          </div>
+
+                        </div>
+
                       ))
 
                     )}

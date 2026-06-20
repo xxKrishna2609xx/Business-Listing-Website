@@ -17,8 +17,9 @@ export const config = {
   },
   navTabs: [
     { label: 'Home', to: '/', match: (p) => p === '/' },
-    { label: 'Categories', to: '/search', match: (p) => p === '/search' || p.startsWith('/category') },
-    { label: 'Services', to: '/search?query=services', match: () => false },
+    { label: 'Categories', to: '/categories', match: (p) => p === '/categories' || p.startsWith('/category') },
+    
+    { label: 'Services', to: '/search', match: () => false },
   ],
   defaultCategories: [
     'All Categories', 'Food & Dining', 'Health & Wellness', 'Education',

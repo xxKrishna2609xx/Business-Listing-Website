@@ -45,7 +45,7 @@ import {
 } from 'lucide-react';
 import BusinessCard from '../../components/business/BusinessCard';
 import { BusinessCardSkeleton } from '../../components/common/Skeletons';
-import { getCategories, getBusinesses, getBanners, getQuickServices } from '../../services/api';
+import { getCategories, getBusinesses, getBanners, getQuickServices, getPublicStats } from '../../services/api';
 import toast from 'react-hot-toast';
 
 const iconMap = {
@@ -107,6 +107,7 @@ const HomePage = () => {
   
   const [banners, setBanners] = useState(FALLBACK_BANNERS);
   const [quickServices, setQuickServices] = useState([]);
+  const [stats, setStats] = useState(null);
 
   const [bannerIdx, setBannerIdx] = useState(0);
   const banner = banners[bannerIdx] || FALLBACK_BANNERS[0];
@@ -240,6 +241,20 @@ const HomePage = () => {
       setLocLoading(false);
     }
   };
+
+
+  useEffect(() => {
+      const getStats = async () => {
+        try{
+          const data = await getPublicStats();
+          setStats(data);
+        } catch(err){
+           toast.error(err || "error from getstats")
+        }
+      };
+
+      getStats();
+    }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -531,10 +546,11 @@ const HomePage = () => {
       <section style={{ background: '#1a56db', padding: '20px 24px' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px 60px' }}>
           {[
-            { icon: Building2, value: '700+',  label: 'Businesses'   },
-            { icon: BadgeCheck,value: '500+',  label: 'Verified'     },
-            { icon: Users,     value: '10K+',  label: 'Monthly Users'},
-            { icon: Star,      value: '4.8★',  label: 'Avg Rating'   },
+            
+            { icon: Building2, value: stats?.listingsCount,  label: 'Businesses'   },
+            { icon: BadgeCheck,value: stats?.verifiedCount,  label: 'Verified'     },
+            { icon: Users,     value: stats?.monthlyUsers,  label: 'Monthly Users'},
+            { icon: Star,      value: stats?.avgRating,  label: 'Avg Rating'   },  
           ].map(({ icon: Icon, value, label }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <Icon size={22} color="rgba(255,255,255,0.7)" />
@@ -551,11 +567,9 @@ const HomePage = () => {
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col items-center text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-semibold mb-3">
-              <Zap size={12} /> Browse By Category
-            </div>
+
             <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">
-              Explore Popular <span className="gradient-text">Categories</span>
+              Explore Popular <span className="text-blue-600">Categories</span>
             </h2>
             <p className="text-slate-500 max-w-xl mx-auto text-sm">
               Browse through our curated business categories to find the services you need.
@@ -563,11 +577,11 @@ const HomePage = () => {
           </div>
 
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-x-2 gap-y-6 md:gap-x-4">
-            {categories.map((cat, i) => {
+            {categories.slice(0, 15).map((cat, i) => {
               const Icon = iconMap[cat.icon] || Building2;
               return (
                 <Link
-                  key={cat.id}
+                  key={cat._id}
                   to={`/category/${cat.slug}`}
                   className="group flex flex-col items-center w-full animate-fade-in"
                   style={{ animationDelay: `${i * 0.05}s` }}
@@ -583,20 +597,14 @@ const HomePage = () => {
                 </Link>
               );
             })}
-
-            {/* Popular Categories (as the 20th category item) */}
+          </div>
+          <div className="mt-10 flex justify-center">
             <Link
-              to="/search"
-              className="group flex flex-col items-center w-full"
+              to="/categories"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all"
             >
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-white border border-slate-150 hover:border-blue-400 rounded-2xl flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:shadow-blue-600/5 transition-all duration-200 group-hover:scale-105 cursor-pointer">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center bg-blue-600/10 border border-blue-100/20 group-hover:bg-blue-600 group-hover:border-blue-600 transition-colors">
-                  <Grid size={22} className="text-blue-600 group-hover:text-white transition-colors" />
-                </div>
-              </div>
-              <span className="text-[11px] md:text-xs font-bold text-slate-700 text-center mt-2 leading-tight group-hover:text-blue-600 transition-colors px-1 line-clamp-2">
-                Popular Categories
-              </span>
+              View All Categories
+              <ArrowRight size={18} />
             </Link>
           </div>
         </div>
@@ -700,28 +708,25 @@ const HomePage = () => {
       </section>
 
       {/* ───────── FEATURED / LATEST BUSINESSES ───────── */}
-      <section className="py-16 bg-slate-50">
+      <section className="py-16 bg-slate-100">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
-              <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-semibold mb-2">
-                <Sparkles size={12} /> Top Picks
-              </div>
               <h2 className="text-3xl font-black text-slate-900">
-                Discover <span className="gradient-text">Businesses</span>
+                Discover <span className="text-blue-600">Businesses</span>
               </h2>
             </div>
 
             {/* Tabs */}
-            <div className="flex bg-white border border-slate-200 rounded-xl p-1 gap-1">
+            <div className="flex bg-white border border-slate-200 rounded-full p-1 gap-1">
               {[
-                { key: 'featured', label: '⭐ Featured' },
-                { key: 'latest', label: '🕐 Latest' },
+                { key: 'featured', label: 'Featured' },
+                { key: 'latest', label: 'Latest' },
               ].map(tab => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                  className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-250 ${
                     activeTab === tab.key
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'text-slate-500 hover:text-slate-700'
@@ -754,14 +759,14 @@ const HomePage = () => {
       </section>
 
       {/* ───────── HOW IT WORKS ───────── */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white rounded-xl  w-3/4 h-1/2 mx-auto">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-teal-50 text-teal-600 px-3 py-1 rounded-full text-xs font-semibold mb-3">
+            {/* <div className="inline-flex items-center gap-2 bg-teal-50 text-teal-600 px-3 py-1 rounded-full text-xs font-semibold mb-3">
               <TrendingUp size={12} /> Simple Process
-            </div>
+            </div> */}
             <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3">
-              How It <span className="gradient-text">Works</span>
+              How It <span className="text-blue-600">Works</span>
             </h2>
           </div>
 
@@ -804,12 +809,12 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mb-4">
+              {/* <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mb-4">
                 <Shield size={12} /> Why Choose Us
-              </div>
+              </div> */}
               <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-5">
                 Trusted by Thousands of{' '}
-                <span className="gradient-text">Businesses & Customers</span>
+                <span className="text-blue-600">Businesses & Customers</span> 
               </h2>
               <p className="text-slate-500 mb-8 leading-relaxed">
                 Right Ads Digital is India's most trusted business directory with a rigorous verification process, real reviews, and a powerful lead-generation system.
@@ -844,10 +849,10 @@ const HomePage = () => {
             {/* Right side cards */}
             <div className="grid grid-cols-2 gap-4">
               {[
-                { value: '700+', label: 'Verified Listings', icon: Building2, color: 'from-blue-500 to-indigo-600' },
+                { value: stats?.verifiedCount, label: 'Verified Listings', icon: Building2, color: 'from-blue-500 to-indigo-600' },
                 { value: '10K+', label: 'Monthly Visitors', icon: Users, color: 'from-teal-500 to-emerald-600' },
-                { value: '8+', label: 'Categories', icon: Zap, color: 'from-violet-500 to-purple-600' },
-                { value: '4.8★', label: 'Average Rating', icon: Star, color: 'from-amber-500 to-orange-600' },
+                { value: stats?.categoriesCount, label: 'Categories', icon: Zap, color: 'from-violet-500 to-purple-600' },
+                { value: stats?.avgRating, label: 'Average Rating', icon: Star, color: 'from-amber-500 to-orange-600' },
               ].map(({ value, label, icon: Icon, color }) => (
                 <div key={label} className={`bg-gradient-to-br ${color} p-6 rounded-2xl flex flex-col items-center text-center shadow-lg`}>
                   <Icon size={28} className="text-white/80 mb-2" />
@@ -875,7 +880,7 @@ const HomePage = () => {
             to="/apply"
             className="inline-flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-slate-900 px-8 py-4 rounded-xl font-bold text-base transition-all duration-200 shadow-xl shadow-yellow-400/20 hover:scale-105"
           >
-            List Your Business — It's Free <ArrowRight size={18} />
+            List Your Business <ArrowRight size={18} />
           </Link>
         </div>
       </section>

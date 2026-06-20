@@ -11,7 +11,7 @@ const CategoryBrowse = () => {
   const [results, setResults] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
-
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -27,19 +27,26 @@ const CategoryBrowse = () => {
 
   const category = categories.find(c => c.slug === categorySlug || c.id === categorySlug || c._id === categorySlug);
   const subcategory = subcategories.find(s => s.slug === subcategorySlug || s.id === subcategorySlug || s._id === subcategorySlug);
-  const catSubcategories = category 
-    ? subcategories.filter(s => s.categoryId === category.id || s.categoryId === category._id) 
-    : [];
+  const catSubcategories = category ? subcategories.filter(s => s.categoryId === category.id || s.categoryId === category._id) : [];
+
 
   useEffect(() => {
     const fetchResults = async () => {
       setLoading(true);
       try {
-        const data = await searchBusinesses(); // Fetch all or apply initial filter logic if needed in backend
-        let filtered = data.filter(b => b.status === 'APPROVED');
-        if (category) filtered = filtered.filter(b => b.categoryId === category.id || b.categoryId === category._id);
-        if (subcategory) filtered = filtered.filter(b => b.subcategoryId === subcategory.id || b.subcategoryId === subcategory._id);
-        setResults(filtered);
+        
+        const response = await searchBusinesses({
+          query: "",
+          city: "",
+          pincode: "",
+          categoryId: category?.id || "",
+          subcategoryId: subcategory?.id || "",
+          brand: "",
+          page: 1,
+          limit: 12,
+        });
+        setResults(response.data);
+
       } catch (err) {
         console.error("Failed to load results", err);
       } finally {
