@@ -279,7 +279,7 @@ export default function Navbar() {
                   onClick={() => setFocSec('q')}
                   style={{ position: 'relative' }}
                 >
-                  <div className="nb__pill-label">Search Businesses</div>
+                  <div className="nb__pill-label">Search <span className="nb__pill-label-desc">Businesses</span></div>
                   <input
                     className="nb__pill-input"
                     placeholder="What are you looking for?"

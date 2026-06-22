@@ -353,3 +353,8 @@
   .nb__pill-sec { padding: 0 14px; }
   .nb__pill-btn { width: 46px; height: 46px; margin-right: 5px; }
 }
+@media (max-width: 767px) {
+  .nb__pill-label-desc {
+    display: none;
+  }
+}
