@@ -43,9 +43,9 @@
 
 /* Logo */
 .nb__logo { flex-shrink: 0; display: flex; align-items: center; text-decoration: none; }
-.nb__logo img { width: auto; display: block; transition: height 0.3s ease; }
-.nb--expanded .nb__logo img { height: 70px; }
-.nb--compact  .nb__logo img { height: 50px; }
+.nb__logo img, .nb__logo-img { width: auto; display: block; transition: height 0.3s ease; }
+.nb--expanded .nb__logo img, .nb--expanded .nb__logo-img { height: 70px; }
+.nb--compact  .nb__logo img, .nb--compact  .nb__logo-img { height: 50px; }
 
 /* ── Nav tabs (centre) ─────────────────────────── */
 .nb__tabs {
@@ -352,4 +352,9 @@
   .nb__pill   { height: 56px; }
   .nb__pill-sec { padding: 0 14px; }
   .nb__pill-btn { width: 46px; height: 46px; margin-right: 5px; }
+}
+@media (max-width: 767px) {
+  .nb__pill-label-desc {
+    display: none;
+  }
 }

@@ -599,7 +599,7 @@ const EditBusiness = () => {
                   ))}
                 </div>
               </div>
-            </div>
+            </div> 
           )}
 
           {/* Step 3: Review */}

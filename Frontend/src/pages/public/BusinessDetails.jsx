@@ -245,9 +245,14 @@ const BusinessDetails = () => {
                 )}
               </div>
 
-              <div className="px-6 py-6">
+              <div className="px-6 py-6 relative">
+                {business.verified && (
+                  <span className="absolute top-6 right-6 bg-teal-50 text-teal-700 border border-teal-200 px-3 py-1 rounded-full text-sm font-medium">
+                    Verified
+                  </span>
+                )}
 
-                <div className="flex gap-5 items-start">
+                <div className="flex flex-col md:flex-row gap-5 items-start">
 
                   {/* Logo */}
                   <div className="relative flex-shrink-0">
@@ -276,19 +281,13 @@ const BusinessDetails = () => {
                   </div>
 
                   {/* Details */}
-                  <div className="flex-1">
+                  <div className="flex-1 w-full">
 
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3 md:pr-24">
 
-                      <h1 className="text-3xl font-bold text-slate-900">
+                      <h1 className="text-2xl md:text-3xl font-bold text-slate-900 leading-tight">
                         {business.businessName}
                       </h1>
-
-                      {business.verified && (
-                        <span className="bg-teal-50 text-teal-700 border border-teal-200 px-3 py-1 rounded-full text-sm font-medium">
-                          Verified
-                        </span>
-                      )}
 
                     </div>
 

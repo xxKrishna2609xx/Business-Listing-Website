@@ -351,38 +351,32 @@ const HomePage = () => {
 
   const handlePincodeChange = async (value) => {
     setPincode(value);
-    setLoadingPincode(true);
     if (value.length < 6) {
       setSearchCity('');
+      setLoadingPincode(false);
     }
     
     if (value.length === 6) {
-
+      setLoadingPincode(true);
       try {
-
         const res = await fetch(
           `https://api.postalpincode.in/pincode/${value}`
         );
-
         const data = await res.json();
         setLoadingPincode(false);
-
-        if (
-          data[0].Status === 'Success'
-        ) {
-
+        if (data[0].Status === 'Success') {
           setSearchCity(
             data[0].PostOffice[0].District ||
             data[0].PostOffice[0].Block ||
             data[0].PostOffice[0].Name
           );
         }
-
       } catch (err) {
-
-        console.error('Pincode lookup failed',err);
+        console.error('Pincode lookup failed', err);
         setLoadingPincode(false);
       }
+    } else if (value.length > 6) {
+      setLoadingPincode(false);
     }
   };
 
@@ -409,7 +403,7 @@ const HomePage = () => {
 
         {/* Arrow controls */}
         {[{ dir: -1, side: 'left', Icon: ChevronLeft }, { dir: 1, side: 'right', Icon: ChevronRight }].map(({ dir, side, Icon }) => (
-          <button key={side} onClick={() => goBanner(dir)} style={{
+          <button key={side} onClick={() => goBanner(dir)} className="hero-banner__arrow" style={{
             position: 'absolute', top: '50%', [side]: 20,
             transform: 'translateY(-50%)',
             width: 40, height: 40, borderRadius: '50%',
@@ -447,79 +441,86 @@ const HomePage = () => {
           </p>
 
           {/* Search form */}
-          <form onSubmit={handleSearch} ref={searchRef} style={{ animation: 'fadeUp 0.7s ease both' }}>
-            <div style={{
-              display: 'flex', flexWrap: 'wrap', gap: 8,
-              background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)',
-              border: '1.5px solid rgba(255,255,255,0.25)',
-              borderRadius: 18, padding: 8, maxWidth: 780, margin: '0 auto',
-            }}>
+          <form onSubmit={handleSearch} ref={searchRef} className="hero-search__form">
+            <div className="hero-search__container">
               {/* Query */}
-              <div style={{ flex: '1 1 200px', position: 'relative', minWidth: 0 }}>
+              <div className="hero-search__query">
                 <Search size={16} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: '#888' }} />
                 <input
                   type="text"
                   placeholder="Search businesses, services..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  style={{
-                    width: '100%', paddingLeft: 38, paddingRight: 12, paddingTop: 12, paddingBottom: 12,
-                    fontSize: 14, border: 'none', borderRadius: 12, outline: 'none',
-                    background: '#fff', color: '#111', fontFamily: 'inherit',
-                  }}
+                  className="hero-search__query-input"
                 />
               </div>
-              {/* City + pincode */}
-              <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 12, padding: '0 12px' }}>
+              {/* Desktop City + Pincode */}
+              <div className="hero-search__location hero-search__location--desktop">
                 <MapPin size={14} style={{ color: '#888', flexShrink: 0 }} />
                 <input
                   type="text"
                   placeholder="City"
                   value={searchCity}
                   onChange={e => setSearchCity(e.target.value)}
-                  style={{ width: 90, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', color: '#111', fontFamily: 'inherit' }}
+                  className="hero-search__location-input-city"
                 />
-                <div style={{ width: 1, height: 16, background: '#ddd' }} />
+                <div className="hero-search__location-divider" />
                 <input
                   type="text"
                   placeholder="Pincode"
                   value={pincode}
                   onChange={(e) =>handlePincodeChange(e.target.value)}
-                  style={{ width: 72, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', color: '#111', fontFamily: 'inherit' }}
-
+                  className="hero-search__location-input-pincode"
                 />
                 <button
                   type="button"
                   onClick={handleDetectLocation}
                   disabled={locLoading}
                   title="Detect my location"
-                  style={{width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #DDDDDD', background: '#fff', cursor: locLoading ? 'not-allowed' : 'pointer', opacity: locLoading ? 0.7 : 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: locLoading ? '#1a56db' : '#555',
-                    flexShrink: 0,
-                    transition: 'color 0.2s',
-                  }}
+                  className="hero-search__location-gps-btn"
+                  style={{ cursor: locLoading ? 'not-allowed' : 'pointer', opacity: locLoading ? 0.7 : 1, color: locLoading ? '#1a56db' : '#555' }}
                 >
                   <Locate size={13} style={{animation: locLoading ? 'spin 1s linear infinite' : 'none'}}/>
                 </button>
               </div>
+
+              {/* Mobile City + Pincode Split side-by-side */}
+              <div className="hero-search__location-wrapper--mobile">
+                <div className="hero-search__city-box-mobile">
+                  <MapPin size={14} style={{ color: '#888', flexShrink: 0 }} />
+                  <input
+                    type="text"
+                    placeholder="City"
+                    value={searchCity}
+                    onChange={e => setSearchCity(e.target.value)}
+                    className="hero-search__location-input-city-mobile"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleDetectLocation}
+                    disabled={locLoading}
+                    title="Detect my location"
+                    className="hero-search__location-gps-btn"
+                    style={{ cursor: locLoading ? 'not-allowed' : 'pointer', opacity: locLoading ? 0.7 : 1, color: locLoading ? '#1a56db' : '#555' }}
+                  >
+                    <Locate size={13} style={{animation: locLoading ? 'spin 1s linear infinite' : 'none'}}/>
+                  </button>
+                </div>
+                <div className="hero-search__pincode-box-mobile">
+                  <input
+                    type="text"
+                    placeholder="Pincode"
+                    value={pincode}
+                    onChange={(e) =>handlePincodeChange(e.target.value)}
+                    className="hero-search__location-input-pincode-mobile"
+                  />
+                </div>
+              </div>
               <button
                 type="submit"
-                style={{
-                  padding: '12px 28px', background: '#1a56db', color: '#fff',
-                  border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 15,
-                  cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
-                  transition: 'background 0.2s, transform 0.15s',
-                  display: 'flex', alignItems: 'center', gap: 7,
-                }}
-
-                onMouseEnter={e => e.currentTarget.style.background = '#1648c0'}
-                onMouseLeave={e => e.currentTarget.style.background = '#1a56db'}
+                className="hero-search__submit-btn"
                 disabled={loadingPincode}
               >
-                  
                 <Search size={16} /> {loadingPincode ? 'Finding City...': 'Search'}
               </button>
             </div>
@@ -718,7 +719,7 @@ const HomePage = () => {
             </div>
 
             {/* Tabs */}
-            <div className="flex bg-white border border-slate-200 rounded-full p-1 gap-1">
+            <div className="flex w-fit sm:w-auto bg-white border border-slate-200 rounded-full p-1 gap-1">
               {[
                 { key: 'featured', label: 'Featured' },
                 { key: 'latest', label: 'Latest' },

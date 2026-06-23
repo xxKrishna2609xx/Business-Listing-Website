@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, Menu, X, Globe, User } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { loginUserApi, getCategories, getSubcategories } from '../../services/api';
 import { config } from '../../config';
 import './Navbar.css';
+import logo from '../../assets/logo.png';
 
 
 export default function Navbar() {
@@ -147,9 +149,15 @@ export default function Navbar() {
         <div className="nb__inner">
           <div className="nb__top">
 
-            {/* Logo */}
+            {/* Logo — layoutId ties it to BrandedLoader's shared animation */}
             <Link to="/" className="nb__logo">
-              <img src="/logo.png" alt="Right Ads" />
+              <motion.img
+                layoutId="brand-logo"
+                src={logo}
+                alt="Right Ads"
+                style={{ width: 'auto', display: 'block' }}
+                className="nb__logo-img"
+              />
             </Link>
 
             {/* BUG 2 FIX: only one tab active via match() */}
@@ -271,7 +279,7 @@ export default function Navbar() {
                   onClick={() => setFocSec('q')}
                   style={{ position: 'relative' }}
                 >
-                  <div className="nb__pill-label">Search Businesses</div>
+                  <div className="nb__pill-label">Search <span className="nb__pill-label-desc">Businesses</span></div>
                   <input
                     className="nb__pill-input"
                     placeholder="What are you looking for?"
