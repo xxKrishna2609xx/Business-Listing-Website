@@ -255,7 +255,7 @@
                       {!isEditing && (
                         <button
                           onClick={() => setIsEditing(true)}
-                          className="flex items-center gap-1 text-xs font-bold text-blue-600 border border-blue-200 px-3.5 py-1.5 rounded-xl hover:bg-blue-50 transition-colors"
+                          className="flex items-center gap-1 text-xs font-bold text-blue-600 border border-blue-200 px-3.5 py-1.5 rounded-xl hover:bg-blue-50 transition-colors cursor-pointer"
                         >
                           <Edit3 size={13} /> Edit Profile
                         </button>
@@ -301,7 +301,7 @@
                         <div className="flex gap-2 pt-2">
                           <button
                             type="submit"
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
+                            className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
                           >
                             Save Changes
                           </button>

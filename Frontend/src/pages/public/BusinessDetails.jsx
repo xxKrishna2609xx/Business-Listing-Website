@@ -33,6 +33,8 @@ const BusinessDetails = () => {
   const [showGallery, setShowGallery] = useState(false);
   const [popupImage, setPopupImage] = useState("");
 
+  const [reviewLoading, setReviewLoading] = useState(false);
+
 
   const handleBookmarkToggle = () => {
     if (!isLoggedIn) {
@@ -76,6 +78,7 @@ const BusinessDetails = () => {
     }
 
     try {
+      setReviewLoading(true);
 
       const response =
         await createReview({
@@ -120,6 +123,9 @@ const BusinessDetails = () => {
         err.response?.data?.detail ||
         'Failed to submit review'
       );
+    }
+    finally {
+      setReviewLoading(false);
     }
   };
   useEffect(() => {
@@ -451,11 +457,23 @@ const BusinessDetails = () => {
                   </div>
 
                   <button
-                    onClick={handleReviewSubmit}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-semibold"
-                  >
-                    Submit Review
-                  </button>
+                      onClick={handleReviewSubmit}
+                      disabled={reviewLoading}
+                      className={`px-5 py-2 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all ${
+                        reviewLoading
+                          ? "bg-blue-400 cursor-not-allowed"
+                          : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                      }`}
+                    >
+                      {reviewLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Submitting...
+                        </>
+                      ) : (
+                        "Submit Review"
+                      )}
+                    </button>
 
                 </div>
 

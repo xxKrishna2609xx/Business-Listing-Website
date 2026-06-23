@@ -477,9 +477,6 @@ async def create_review(
 
         **review.dict(),
 
-        "customerName":
-            current_user["name"],
-
         "userId":
             str(current_user["_id"]),
 
@@ -495,12 +492,36 @@ async def create_review(
         "message": "Review submitted successfully"
     }
 
+
+
 @app.get("/api/reviews/{business_id}")
 async def get_reviews(business_id: str):
 
     reviews = await db.reviews.find({
         "businessId": business_id
     }).to_list(1000)
+
+    user_ids = [
+        ObjectId(r["userId"])
+        for r in reviews
+        if r.get("userId")
+    ]
+
+    users = await db.users.find(
+        {"_id": {"$in": user_ids}},
+        {"name": 1}
+    ).to_list(None)
+
+    user_map = {
+        str(user["_id"]): user["name"]
+        for user in users
+    }
+
+    for review in reviews:
+        review["customerName"] = user_map.get(
+            review["userId"],
+            "Unknown User"
+        )
 
     return serializeList(reviews)
 
