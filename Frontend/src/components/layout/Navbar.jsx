@@ -349,7 +349,7 @@ export default function Navbar() {
             <div className="nb__mobile-links">
               <Link to="/" className="nb__mobile-link nb__mobile-link--outline"
                 onClick={() => setMobileOpen(false)}>Home</Link>
-              <Link to="/search" className="nb__mobile-link nb__mobile-link--outline"
+              <Link to="/categories" className="nb__mobile-link nb__mobile-link--outline"
                 onClick={() => setMobileOpen(false)}>Categories</Link>
               <Link to="/apply" className="nb__mobile-link nb__mobile-link--primary"
                 onClick={() => setMobileOpen(false)}>List Business</Link>
