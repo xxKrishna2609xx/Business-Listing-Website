@@ -6,8 +6,8 @@
   import toast from 'react-hot-toast';
   import { updateProfile } from '../../services/api';
   import {
-    getUserApplications,
-    getUserLeads,
+    getMyApplications,
+    getMyLeads,
     getBusinesses,
     getMyBusinessLeads,
     getMyBusinesses
@@ -38,12 +38,10 @@
           setPhone(user.phone);
 
           // Load leads submitted by this user from local storage
-          const leads = await getUserLeads(user.email);
+          const leads = await getMyLeads();
 
           setMyLeads(leads);
-          // Filter leads belonging to this user
-          const userLeads = leads.filter(l => l.email.toLowerCase() === user.email.toLowerCase());
-          setMyLeads(userLeads);
+    
         }
       };
       const fetchMyBusinesses = async () => {
@@ -57,14 +55,9 @@
       };
       const loadApplications = async () => {
         
-        if (!user?.email) return;
-        
         try {
           
-          const data =
-          await getUserApplications(
-            user.email
-          );
+          const data = await getMyApplications();
           
           setApplications(data);
           
@@ -92,14 +85,9 @@
       };
       const loadReceivedLeads = async () => {
 
-        if (!user?.email) return;
-
         try {
 
-          const data =
-            await getMyBusinessLeads(
-              user.email
-            );
+          const data = await getMyBusinessLeads();
 
           setReceivedLeads(data);
 
@@ -209,7 +197,7 @@
                     { id: 'bookmarks', label: `Saved Listings (${bookmarkedIds.length})`, icon: Heart },
                     {id: 'receivedLeads',label: `Received Leads (${receivedLeads.length})`,icon: Send},
                     { id: 'My Businesses', label: `My Businesses (${myBusinesses.length})`, icon: Building2 },
-                    { id: 'My Applications', label: `Pending Applications (${applications.length})`, icon: Send },
+                    { id: 'My Applications', label: `Pending/Rejected Applications (${applications.length})`, icon: Send },
                     { id: 'leads', label: `Quote Requests (${myLeads.length})`, icon: Send },
                   ].map(item => {
                     const Icon = item.icon;

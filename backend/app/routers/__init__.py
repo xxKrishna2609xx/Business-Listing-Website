@@ -1,0 +1,10 @@
+from .stats import router as stats_router
+from .category import router as category_router
+from .upload import router as upload_router
+from .review import router as review_router
+from .auth import router as auth_router
+from .bookmark import router as bookmark_router
+from .lead import router as lead_router
+from .business import router as business_router
+from .application import router as application_router
+from .admin import router as admin_router

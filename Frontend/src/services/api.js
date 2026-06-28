@@ -1,14 +1,6 @@
 import axios from 'axios';
 
-let API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-
-// Auto-correct missing '/api' suffix in base URL configurations
-if (API_BASE_URL && !API_BASE_URL.endsWith('/api') && !API_BASE_URL.endsWith('/api/')) {
-  const cleanedBase = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
-  if (!cleanedBase.includes('/api/')) {
-    API_BASE_URL = `${cleanedBase}/api`;
-  }
-}
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -198,14 +190,10 @@ export const registerUser = async (userData) => {
   return data;
 };
 
-export const getUserLeads = async (
-  email
-) => {
-
+export const getMyLeads = async () => {
   const { data } = await api.get(
-    `/leads/user/${email}`
+    "/my-leads"
   );
-
   return data;
 };
 
@@ -292,12 +280,9 @@ export const updateBusiness = async (id, businessData) => {
   return data;
 };
 
-export const getUserApplications = async (
-  email
-) => {
-
+export const getMyApplications = async () => {
   const { data } = await api.get(
-    `/applications/user/${email}`
+    "/my-applications"
   );
 
   return data;
@@ -438,14 +423,10 @@ export const toggleBusinessFeatured = async (id) => {
   return data;
 };
 
-export const getMyBusinessLeads = async (
-  email
-) => {
-
-  const { data } =
-    await api.get(
-      `/my-business-leads/${email}`
-    );
+export const getMyBusinessLeads = async () => {
+  const { data } = await api.get(
+    "/my-business-leads"
+  );
 
   return data;
 };
@@ -508,7 +489,7 @@ export const uploadImage = async (file, onProgress) => {
           onProgress(percent);
         }
       },
-    }
+    } 
   );
 
   return data;

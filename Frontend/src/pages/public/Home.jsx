@@ -805,69 +805,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ───────── WHY CHOOSE US ───────── */}
-      <section className="py-16 bg-gradient-to-br from-blue-50 to-teal-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              {/* <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mb-4">
-                <Shield size={12} /> Why Choose Us
-              </div> */}
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-5">
-                Trusted by Thousands of{' '}
-                <span className="text-blue-600">Businesses & Customers</span> 
-              </h2>
-              <p className="text-slate-500 mb-8 leading-relaxed">
-                Right Ads Digital is India's most trusted business directory with a rigorous verification process, real reviews, and a powerful lead-generation system.
-              </p>
-              <div className="space-y-4">
-                {[
-                  { icon: BadgeCheck, title: 'Verified Businesses', desc: 'Every listed business is manually reviewed and verified.', color: 'text-teal-600 bg-teal-50' },
-                  { icon: Shield, title: 'Secure & Reliable', desc: 'Your data is protected with enterprise-grade security.', color: 'text-blue-600 bg-blue-50' },
-                  { icon: Zap, title: 'Instant Lead Connection', desc: 'Connect directly with businesses via WhatsApp or quote forms.', color: 'text-indigo-600 bg-indigo-50' },
-                ].map(({ icon: Icon, title, desc, color }) => (
-                  <div key={title} className="flex items-start gap-4">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
-                      <Icon size={18} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{title}</h4>
-                      <p className="text-slate-500 text-sm">{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-8 flex gap-3">
-                <Link to="/apply" className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20">
-                  List Your Business
-                </Link>
-                <Link to="/search" className="border border-slate-200 text-slate-700 px-6 py-3 rounded-xl font-semibold text-sm hover:border-blue-400 hover:text-blue-600 transition-colors">
-                  Browse Directory
-                </Link>
-              </div>
-            </div>
-
-            {/* Right side cards */}
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { value: stats?.verifiedCount, label: 'Verified Listings', icon: Building2, color: 'from-blue-500 to-indigo-600' },
-                { value: '10K+', label: 'Monthly Visitors', icon: Users, color: 'from-teal-500 to-emerald-600' },
-                { value: stats?.categoriesCount, label: 'Categories', icon: Zap, color: 'from-violet-500 to-purple-600' },
-                { value: stats?.avgRating, label: 'Average Rating', icon: Star, color: 'from-amber-500 to-orange-600' },
-              ].map(({ value, label, icon: Icon, color }) => (
-                <div key={label} className={`bg-gradient-to-br ${color} p-6 rounded-2xl flex flex-col items-center text-center shadow-lg`}>
-                  <Icon size={28} className="text-white/80 mb-2" />
-                  <div className="text-3xl font-black text-white">{value}</div>
-                  <div className="text-white/80 text-xs mt-1">{label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-
-
       {/* ───────── FINAL CTA ───────── */}
       <section className="py-16 hero-gradient">
         <div className="max-w-7xl mx-auto px-4 flex flex-col items-center text-center">
