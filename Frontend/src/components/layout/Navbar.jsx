@@ -345,20 +345,11 @@ export default function Navbar() {
         {/* Mobile drawer */}
         {mobileOpen && (
           <div className="nb__mobile-drawer">
-            <form
-              className="nb__mobile-search"
-              onSubmit={e => { e.preventDefault(); doSearch(mobileQ, mobileCity); }}
-            >
-              <input className="nb__mobile-input" placeholder="Search businesses..."
-                value={mobileQ} onChange={e => setMobileQ(e.target.value)} />
-              <input className="nb__mobile-input" placeholder="City or area"
-                value={mobileCity} onChange={e => setMobileCity(e.target.value)} />
-              <button type="submit" className="nb__mobile-sbtn">Search</button>
-            </form>
+            
             <div className="nb__mobile-links">
               <Link to="/" className="nb__mobile-link nb__mobile-link--outline"
                 onClick={() => setMobileOpen(false)}>Home</Link>
-              <Link to="/search" className="nb__mobile-link nb__mobile-link--outline"
+              <Link to="/categories" className="nb__mobile-link nb__mobile-link--outline"
                 onClick={() => setMobileOpen(false)}>Categories</Link>
               <Link to="/apply" className="nb__mobile-link nb__mobile-link--primary"
                 onClick={() => setMobileOpen(false)}>List Business</Link>
