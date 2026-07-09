@@ -90,7 +90,6 @@ const Footer = () => {
                 { label: 'Home', to: '/' },
                 { label: 'Search Businesses', to: '/search' },
                 { label: 'List Your Business', to: '/apply' },
-                { label: 'Admin Panel', to: '/admin/login' },
                 { label: 'Privacy Policy', to: import.meta.env.VITE_POLICY_PRIVACY || '#' },
                 { label: 'Terms of Service', to: import.meta.env.VITE_POLICY_TERMS || '#' },
               ].map((link, i) => (

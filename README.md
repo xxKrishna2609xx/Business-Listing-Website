@@ -193,17 +193,6 @@ Before running the application, make sure you have the following installed on yo
 
 ---
 
-## 🔐 Pre-seeded Admin Credentials
-
-Log in using the pre-seeded credentials to access administrative dashboard capabilities:
-
-> [!IMPORTANT]
-> * **Admin Email**: `admin@rightads.digital`
-> * **Admin Password**: `Admin@123`
-> 
-> *To access the admin suite: Sign in with the details above, click your profile avatar in the navigation bar, and select **Admin Panel**.*
-
----
 
 ## 🧪 Verification & Testing
 

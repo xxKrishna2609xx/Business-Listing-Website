@@ -45,7 +45,7 @@ import {
 } from 'lucide-react';
 import BusinessCard from '../../components/business/BusinessCard';
 import { BusinessCardSkeleton } from '../../components/common/Skeletons';
-import { getCategories, getBusinesses, getBanners, getQuickServices, getPublicStats } from '../../services/api';
+import { getCategories, getSubcategories, getBusinesses, getBanners, getQuickServices, getPublicStats } from '../../services/api';
 import toast from 'react-hot-toast';
 
 const iconMap = {
@@ -102,7 +102,9 @@ const HomePage = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('featured');
+  const [currentPage, setCurrentPage] = useState(1);
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   
   const [banners, setBanners] = useState(FALLBACK_BANNERS);
@@ -116,25 +118,61 @@ const HomePage = () => {
   const bannerTimer = useRef(null);
   const [bannerAnim, setBannerAnim] = useState('slide-in');
 
-  const dailyNeedsItems = quickServices.filter(item => item.section === 'Daily Needs');
-  const travelBookingsItems = quickServices.filter(item => item.section === 'Travel Bookings');
+  // ── Resolve Daily Needs & Travel Bookings from DB categories ──
+  const dailyNeedsCat    = categories.find(c => c.slug === 'daily-needs');
+  const travelBookingsCat = categories.find(c => c.slug === 'travel-bookings');
 
-  const dailyNeeds = dailyNeedsItems.length > 0 ? dailyNeedsItems : [
-    { name: 'Groceries', icon: ShoppingBag, iconColor: 'text-indigo-500 fill-indigo-50', query: 'Groceries' },
-    { name: 'Fruits & Veg', icon: Apple, iconColor: 'text-emerald-500 fill-emerald-50', query: 'Vegetables' },
-    { name: 'Milk & Dairy', icon: Milk, iconColor: 'text-blue-500 fill-blue-50', query: 'Dairy' },
-    { name: 'Medicines', icon: Pill, iconColor: 'text-rose-500 fill-rose-50', query: 'Pharmacy' },
-    { name: 'Water Supplier', icon: Droplet, iconColor: 'text-cyan-500 fill-cyan-50', query: 'Water' },
-    { name: 'Laundry/Dry', icon: WashingMachine, iconColor: 'text-amber-500 fill-amber-50', query: 'Laundry' },
-  ];
+  const dailyNeedsCatId    = dailyNeedsCat?.id || dailyNeedsCat?._id;
+  const travelBookingsCatId = travelBookingsCat?.id || travelBookingsCat?._id;
 
-  const travelBookings = travelBookingsItems.length > 0 ? travelBookingsItems : [
-    { name: 'Flight', icon: Plane, iconColor: 'text-sky-500 fill-sky-50', subtext: 'Powered By\nEasemytrip.com', query: 'Flights' },
-    { name: 'Bus', icon: Bus, iconColor: 'text-red-500 fill-red-50', subtext: 'Affordable Rides', query: 'Bus' },
-    { name: 'Train', icon: Train, iconColor: 'text-indigo-600 fill-indigo-50', subtext: '', query: 'Train' },
-    { name: 'Hotel', icon: Hotel, iconColor: 'text-emerald-500 fill-emerald-50', subtext: 'Budget-friendly\nStay', query: 'Hotels' },
-    { name: 'Car Rentals', icon: Car, iconColor: 'text-blue-500 fill-blue-50', subtext: 'Drive Easy\nAnywhere', query: 'Car Rentals' },
-  ];
+  // Icon & colour map keyed by subcategory slug (DB-driven)
+  const subIconMap = {
+    'groceries':       { icon: ShoppingBag,   iconColor: 'text-indigo-500' },
+    'fruits-veg':      { icon: Apple,          iconColor: 'text-emerald-500' },
+    'milk-dairy':      { icon: Milk,           iconColor: 'text-blue-500' },
+    'medicines':       { icon: Pill,           iconColor: 'text-rose-500' },
+    'water-supplier':  { icon: Droplet,        iconColor: 'text-cyan-500' },
+    'laundry-dry':     { icon: WashingMachine, iconColor: 'text-amber-500' },
+    'flight':          { icon: Plane,          iconColor: 'text-sky-500',     subtext: 'Powered By\nEasemytrip.com' },
+    'bus':             { icon: Bus,            iconColor: 'text-red-500',     subtext: 'Affordable Rides' },
+    'train':           { icon: Train,          iconColor: 'text-indigo-600' },
+    'hotel':           { icon: Hotel,          iconColor: 'text-emerald-500', subtext: 'Budget-friendly\nStay' },
+    'car-rentals':     { icon: Car,            iconColor: 'text-blue-500',    subtext: 'Drive Easy\nAnywhere' },
+  };
+
+  // Build arrays from DB subcategories, falling back to defaults if not loaded yet
+  const dailyNeeds = dailyNeedsCatId
+    ? subcategories
+        .filter(s => s.categoryId === dailyNeedsCatId)
+        .map(s => ({
+          name: s.name,
+          slug: s.slug,
+          ...(subIconMap[s.slug] || { icon: Grid, iconColor: 'text-slate-500' }),
+        }))
+    : [
+        { name: 'Groceries',     slug: 'groceries',      icon: ShoppingBag,   iconColor: 'text-indigo-500' },
+        { name: 'Fruits & Veg',  slug: 'fruits-veg',     icon: Apple,          iconColor: 'text-emerald-500' },
+        { name: 'Milk & Dairy',  slug: 'milk-dairy',     icon: Milk,           iconColor: 'text-blue-500' },
+        { name: 'Medicines',     slug: 'medicines',      icon: Pill,           iconColor: 'text-rose-500' },
+        { name: 'Water Supplier',slug: 'water-supplier', icon: Droplet,        iconColor: 'text-cyan-500' },
+        { name: 'Laundry/Dry',   slug: 'laundry-dry',    icon: WashingMachine, iconColor: 'text-amber-500' },
+      ];
+
+  const travelBookings = travelBookingsCatId
+    ? subcategories
+        .filter(s => s.categoryId === travelBookingsCatId)
+        .map(s => ({
+          name: s.name,
+          slug: s.slug,
+          ...(subIconMap[s.slug] || { icon: Grid, iconColor: 'text-slate-500' }),
+        }))
+    : [
+        { name: 'Flight',      slug: 'flight',       icon: Plane,  iconColor: 'text-sky-500',    subtext: 'Powered By\nEasemytrip.com' },
+        { name: 'Bus',         slug: 'bus',          icon: Bus,    iconColor: 'text-red-500',    subtext: 'Affordable Rides' },
+        { name: 'Train',       slug: 'train',        icon: Train,  iconColor: 'text-indigo-600' },
+        { name: 'Hotel',       slug: 'hotel',        icon: Hotel,  iconColor: 'text-emerald-500', subtext: 'Budget-friendly\nStay' },
+        { name: 'Car Rentals', slug: 'car-rentals',  icon: Car,    iconColor: 'text-blue-500',   subtext: 'Drive Easy\nAnywhere' },
+      ];
 
   const allSuggestions = [
     'SEO Services', 'Web Development', 'Graphic Design', 'Social Media Marketing',
@@ -260,13 +298,15 @@ const HomePage = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [cats, bizs, fetchedBanners, fetchedQuickServices] = await Promise.all([
+        const [cats, subs, bizs, fetchedBanners, fetchedQuickServices] = await Promise.all([
           getCategories(),
+          getSubcategories().catch(() => []),
           getBusinesses(),
           getBanners().catch(() => []),
           getQuickServices().catch(() => [])
         ]);
         setCategories(cats);
+        setSubcategories(subs);
         setBusinesses(bizs);
         if (fetchedBanners && fetchedBanners.length > 0) {
           setBanners(fetchedBanners);
@@ -381,9 +421,16 @@ const HomePage = () => {
   };
 
   const featuredBusinesses = businesses.filter(b => b.featured);
-  const displayedBusinesses = activeTab === 'featured'
-    ? (featuredBusinesses.length > 0 ? featuredBusinesses : businesses.slice(0, 6))
+  const currentTabBusinesses = activeTab === 'featured'
+    ? (featuredBusinesses.length > 0 ? featuredBusinesses : businesses.slice(0, 9))
     : businesses.slice().reverse();
+
+  const cardsPerPage = 9;
+  const totalPages = Math.ceil(currentTabBusinesses.length / cardsPerPage);
+  const displayedBusinesses = currentTabBusinesses.slice(
+    (currentPage - 1) * cardsPerPage,
+    currentPage * cardsPerPage
+  );
 
   return (
     <div className="min-h-screen">
@@ -627,7 +674,7 @@ const HomePage = () => {
                   Find essential daily services and local supplies instantly near you
                 </p>
                 <Link
-                  to="/search?query=Daily+Needs"
+                  to={dailyNeedsCat ? `/category/${dailyNeedsCat.slug}` : '/search?query=Daily+Needs'}
                   className="inline-flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors"
                 >
                   Explore More <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
@@ -641,7 +688,11 @@ const HomePage = () => {
                   return (
                     <Link
                       key={idx}
-                      to={`/search?query=${encodeURIComponent(item.query)}`}
+                      to={
+                        dailyNeedsCat
+                          ? `/category/${dailyNeedsCat.slug}?subcategory=${encodeURIComponent(item.name)}`
+                          : `/search?query=${encodeURIComponent(item.name)}`
+                      }
                       className="group flex flex-col items-center w-full text-center"
                     >
                       <div className="w-20 h-20 bg-white border border-slate-200 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:border-blue-500 group-hover:shadow-md group-hover:-translate-y-1 cursor-pointer">
@@ -670,7 +721,7 @@ const HomePage = () => {
                   Instant ticket bookings for your best travel and commute experiences
                 </p>
                 <Link
-                  to="/search?query=Travel"
+                  to={travelBookingsCat ? `/category/${travelBookingsCat.slug}` : '/search?query=Travel'}
                   className="inline-flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors"
                 >
                   Explore More <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
@@ -684,7 +735,11 @@ const HomePage = () => {
                   return (
                     <Link
                       key={idx}
-                      to={`/search?query=${encodeURIComponent(item.query)}`}
+                      to={
+                        travelBookingsCat
+                          ? `/category/${travelBookingsCat.slug}?subcategory=${encodeURIComponent(item.name)}`
+                          : `/search?query=${encodeURIComponent(item.name)}`
+                      }
                       className="group flex flex-col items-center w-full text-center"
                     >
                       <div className="w-20 h-20 bg-white border border-slate-200 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:border-blue-500 group-hover:shadow-md group-hover:-translate-y-1 cursor-pointer">
@@ -726,7 +781,7 @@ const HomePage = () => {
               ].map(tab => (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
+                  onClick={() => { setActiveTab(tab.key); setCurrentPage(1); }}
                   className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-250 ${
                     activeTab === tab.key
                       ? 'bg-blue-600 text-white shadow-sm'
@@ -741,12 +796,55 @@ const HomePage = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {loading
-              ? Array.from({ length: 6 }).map((_, i) => <BusinessCardSkeleton key={i} />)
+              ? Array.from({ length: 9 }).map((_, i) => <BusinessCardSkeleton key={i} />)
               : displayedBusinesses.map(biz => (
                   <BusinessCard key={biz._id} business={biz} featured={biz.featured} />
                 ))
             }
           </div>
+
+          {/* Pagination */}
+          {!loading && totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-10 flex-wrap">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={`px-4 py-2 rounded-xl border text-sm font-semibold transition-all duration-200 flex items-center gap-1 ${
+                  currentPage === 1
+                    ? "bg-slate-50 text-slate-400 border-slate-100 cursor-not-allowed"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600 cursor-pointer shadow-sm hover:shadow"
+                }`}
+              >
+                Previous
+              </button>
+
+              {Array.from({ length: totalPages }, (_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentPage(index + 1)}
+                  className={`w-10 h-10 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer ${
+                    currentPage === index + 1
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                      : "bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 shadow-sm hover:shadow"
+                  }`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={`px-4 py-2 rounded-xl border text-sm font-semibold transition-all duration-200 flex items-center gap-1 ${
+                  currentPage === totalPages
+                    ? "bg-slate-50 text-slate-400 border-slate-100 cursor-not-allowed"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600 cursor-pointer shadow-sm hover:shadow"
+                }`}
+              >
+                Next
+              </button>
+            </div>
+          )}
 
           <div className="text-center mt-8">
             <Link
