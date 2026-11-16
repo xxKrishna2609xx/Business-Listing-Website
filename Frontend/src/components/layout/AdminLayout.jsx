@@ -46,11 +46,11 @@ const handleLogout = () => {
           <Link to="/" className="flex items-center gap-3">
             <img
               src="/logo-icon-light.png"
-              alt="Right Ads"
+              alt="Vypaar Setu"
               className="w-9 h-9 object-contain"
             />
             <div>
-              <div className="text-white font-bold text-sm">Right Ads Digital</div>
+              <div className="text-white font-bold text-sm">Vypaar Setu</div>
               <div className="text-blue-400 text-xs">Admin Panel</div>
             </div>
           </Link>

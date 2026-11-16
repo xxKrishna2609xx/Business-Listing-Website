@@ -173,7 +173,7 @@ const BusinessDetails = () => {
     );
   }
 
-  const whatsappUrl = `https://wa.me/${business.phone.replace(/\D/g, '')}?text=Hi, I found your listing on Right Ads Digital. I'm interested in your services.`;
+  const whatsappUrl = `https://wa.me/${business.phone.replace(/\D/g, '')}?text=Hi, I found your listing on Vypaar Setu. I'm interested in your services.`;
 
   return (
     <div className="min-h-screen bg-slate-50">

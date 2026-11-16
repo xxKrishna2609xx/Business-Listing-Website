@@ -19,7 +19,7 @@ const Footer = () => {
         <div className="max-w-7xl mx-auto px-4 py-10 flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
             <h3 className="text-white text-xl font-bold">Ready to grow your business?</h3>
-            <p className="text-blue-100 text-sm mt-1">Join 700+ verified businesses on Right Ads Digital</p>
+            <p className="text-blue-100 text-sm mt-1">Join 700+ verified businesses on Vypaar Setu</p>
           </div>
           <Link
             to="/apply"
@@ -38,7 +38,7 @@ const Footer = () => {
             <Link to="/" className="flex items-center mb-4">
               <img
                 src="/logo-light.png"
-                alt="Right Ads Logo"
+                alt="Vypaar Setu Logo"
                 className="h-10 w-auto"
               />
             </Link>
@@ -123,10 +123,10 @@ const Footer = () => {
               </li>
               <li>
                 <a 
-                  href={`mailto:${import.meta.env.VITE_CONTACT_EMAIL || "support@rightadsdigital.com"}`} 
+                  href={`mailto:${import.meta.env.VITE_CONTACT_EMAIL || "support@vypaarsetu.com"}`} 
                   className="flex items-center gap-2.5 text-sm text-slate-400 hover:text-blue-400 transition-colors"
                 >
-                  <Mail size={15} className="text-blue-400" /> {import.meta.env.VITE_CONTACT_EMAIL || "support@rightadsdigital.com"}
+                  <Mail size={15} className="text-blue-400" /> {import.meta.env.VITE_CONTACT_EMAIL || "support@vypaarsetu.com"}
                 </a>
               </li>
             </ul>
@@ -137,9 +137,9 @@ const Footer = () => {
       {/* Bottom Bar */}
       <div className="border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} Right Ads Digital. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Vypaar Setu. All rights reserved.</p>
           <p className="flex items-center gap-1">
-            Made with <Heart size={11} className="text-rose-400 fill-rose-400" /> by Right Ads Digital Team
+            Made with <Heart size={11} className="text-rose-400 fill-rose-400" /> by Vypaar Setu Team
           </p>
         </div>
       </div>

@@ -154,7 +154,7 @@ export default function Navbar() {
               <motion.img
                 layoutId="brand-logo"
                 src={logo}
-                alt="Right Ads"
+                alt="Vypaar Setu"
                 style={{ width: 'auto', display: 'block' }}
                 className="nb__logo-img"
               />

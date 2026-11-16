@@ -1,7 +1,7 @@
 export const config = {
   apiBaseUrl: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
   contact: {
-    email: import.meta.env.VITE_CONTACT_EMAIL || "support@rightadsdigital.com",
+    email: import.meta.env.VITE_CONTACT_EMAIL || "support@vypaarsetu.com",
     phone: import.meta.env.VITE_CONTACT_PHONE || "+91 98765 00000",
     address: import.meta.env.VITE_CONTACT_ADDRESS || "14, Business Hub, Sector 21, Mumbai, Maharashtra 400001",
   },

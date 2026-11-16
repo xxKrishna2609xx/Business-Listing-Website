@@ -1,4 +1,4 @@
-// Mock data for the Right Ads Digital Business Directory
+// Mock data for the Vypaar Setu Business Directory
 // This simulates backend API responses
 
 export const categories = [
@@ -317,7 +317,7 @@ export const testimonials = [
     name: 'Sanjay Gupta',
     role: 'CEO, TechStart India',
     avatar: 'https://ui-avatars.com/api/?name=Sanjay+Gupta&background=2563eb&color=fff&size=64&rounded=true',
-    text: 'Right Ads Digital helped us get 3x more leads in just 2 months. Their directory platform is a game-changer for local businesses!',
+    text: 'Vypaar Setu helped us get 3x more leads in just 2 months. Their directory platform is a game-changer for local businesses!',
     rating: 5,
   },
   {

@@ -7,7 +7,7 @@ import logo from './assets/logo.png';
 
 /* ─── Branded Loader Screen ─────────────────────────────────────────
    Always visible for at least 1 second (2s used below for smooth experience).
-   Shows the Right Ads logo centered with a pulse ring + loading bar.
+   Shows the Vypaar Setu logo centered with a pulse ring + loading bar.
    Once both auth AND the minimum duration have elapsed, the loader
    fades out and the logo flies to its final position in the navbar
    via layoutId="brand-logo".
@@ -53,7 +53,7 @@ function BrandedLoader() {
       <motion.img
         layoutId="brand-logo"
         src={logo}
-        alt="Right Ads"
+        alt="Vypaar Setu"
         initial={{ opacity: 0, scale: 0.88 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}

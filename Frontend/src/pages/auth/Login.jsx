@@ -62,9 +62,9 @@ const Login = () => {
 
         <div className="max-w-md relative z-10 space-y-6">
           <div className="flex items-center gap-3">
-            <img src="/logo-icon-light.png" alt="Right Ads Logo" className="w-12 h-12 object-contain" />
+            <img src="/logo-icon-light.png" alt="Vypaar Setu Logo" className="w-12 h-12 object-contain" />
             <div>
-              <div className="text-2xl font-black leading-tight">Right Ads</div>
+              <div className="text-2xl font-black leading-tight">Vypaar Setu</div>
               <div className="text-teal-300 text-xs font-semibold tracking-wider uppercase">Business Directory</div>
             </div>
           </div>
@@ -102,7 +102,7 @@ const Login = () => {
               <LogIn size={24} />
             </div>
             <h2 className="text-2xl font-black text-slate-900">Sign In</h2>
-            <p className="text-slate-500 text-sm mt-1">Access your Right Ads account</p>
+            <p className="text-slate-500 text-sm mt-1">Access your Vypaar Setu account</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

@@ -103,7 +103,7 @@ const AdminLogin = () => {
               <Building2 size={30} className="text-white" />
             </div>
             <div>
-              <div className="text-white font-bold text-lg">Right Ads Digital</div>
+              <div className="text-white font-bold text-lg">Vypaar Setu</div>
               <div className="text-blue-300 text-xs">Admin Panel</div>
             </div>
           </Link>

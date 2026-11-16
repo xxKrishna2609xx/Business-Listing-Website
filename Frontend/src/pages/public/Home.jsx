@@ -78,7 +78,7 @@ const FALLBACK_BANNERS = [
   },
   {
     url: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1400&q=80',
-    title: 'Grow Your Business with Right Ads',
+    title: 'Grow Your Business with Vypaar Setu',
     sub: 'List your business free and reach thousands of customers',
   },
   {
@@ -910,7 +910,7 @@ const HomePage = () => {
             Ready to List Your Business?
           </h2>
           <p className="text-blue-100 mb-8 max-w-xl">
-            Join 700+ verified businesses on Right Ads Digital and start receiving leads from thousands of potential customers today.
+            Join 700+ verified businesses on Vypaar Setu and start receiving leads from thousands of potential customers today.
           </p>
           <Link
             to="/apply"

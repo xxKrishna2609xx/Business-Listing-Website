@@ -29,7 +29,7 @@ const Signup = () => {
     setLoading(true);
     try {
       await signupUser(name, email, cleanPhone, password);
-      toast.success('Registration successful! Welcome to Right Ads.');
+      toast.success('Registration successful! Welcome to Vypaar Setu.');
       navigate('/');
     } catch (err) {
       toast.error(err.message || 'Registration failed.');
@@ -60,7 +60,7 @@ const Signup = () => {
 
         <div style={{ position: 'relative', zIndex: 1, padding: '64px 56px', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%', color: '#fff' }}>
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 56, textDecoration: 'none' }}>
-            <img src="/logo-light.png" alt="Right Ads" style={{ height: 40, width: 'auto' }} />
+            <img src="/logo-light.png" alt="Vypaar Setu" style={{ height: 40, width: 'auto' }} />
           </Link>
 
           <h1 style={{ fontSize: 38, fontWeight: 800, lineHeight: 1.2, color: '#fff', marginBottom: 16 }}>
@@ -94,7 +94,7 @@ const Signup = () => {
           {/* Mobile logo */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }} className="signup-mobile-logo">
             <Link to="/">
-              <img src="/logo.png" alt="Right Ads" style={{ height: 42, width: 'auto' }} />
+              <img src="/logo.png" alt="Vypaar Setu" style={{ height: 42, width: 'auto' }} />
             </Link>
           </div>
 
@@ -110,7 +110,7 @@ const Signup = () => {
                 <User size={22} color="#00B8FF" />
               </div>
               <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111', marginBottom: 4 }}>Create Account</h2>
-              <p style={{ fontSize: 14, color: '#717171' }}>Join Right Ads Business Directory today</p>
+              <p style={{ fontSize: 14, color: '#717171' }}>Join Vypaar Setu Business Directory today</p>
             </div>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
