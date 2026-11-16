@@ -62,7 +62,7 @@ const Login = () => {
 
         <div className="max-w-md relative z-10 space-y-6">
           <div className="flex items-center gap-3">
-            <img src="/logo-icon-light.png" alt="Vypaar Setu Logo" className="w-12 h-12 object-contain" />
+            <img src="/logo-icon-light.png?v=2" alt="Vypaar Setu Logo" className="w-12 h-12 object-contain" />
             <div>
               <div className="text-2xl font-black leading-tight">Vypaar Setu</div>
               <div className="text-teal-300 text-xs font-semibold tracking-wider uppercase">Business Directory</div>

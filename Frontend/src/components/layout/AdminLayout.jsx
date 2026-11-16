@@ -45,7 +45,7 @@ const handleLogout = () => {
         <div className="p-5 border-b border-slate-800">
           <Link to="/" className="flex items-center gap-3">
             <img
-              src="/logo-icon-light.png"
+              src="/logo-icon-light.png?v=2"
               alt="Vypaar Setu"
               className="w-9 h-9 object-contain"
             />

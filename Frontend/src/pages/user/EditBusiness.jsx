@@ -76,7 +76,7 @@ const EditBusiness = () => {
             setExistingGallery(data.galleryImages || []);
 
         } catch (err) {
-            toast.error(err || "Errro in fetchBusiness")
+            toast.error(err?.response?.data?.detail || err?.message || "Error in fetchBusiness");
             console.error(err);
 
         }

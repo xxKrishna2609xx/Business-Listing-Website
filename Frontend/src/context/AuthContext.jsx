@@ -18,11 +18,17 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check localStorage for persisted session
-    const savedUser = localStorage.getItem('auth_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    try {
+      const savedUser = localStorage.getItem('auth_user');
+      if (savedUser && savedUser !== 'undefined') {
+        setUser(JSON.parse(savedUser));
+      }
+    } catch (e) {
+      console.error('Failed to parse saved auth_user:', e);
+      localStorage.removeItem('auth_user');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   // Regular user/owner login

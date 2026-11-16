@@ -10,7 +10,9 @@ const Footer = () => {
   const [categories, setCategories] = useState([]);
   
   useEffect(() => {
-    getCategories().then(setCategories).catch(console.error);
+    getCategories()
+      .then(data => setCategories(Array.isArray(data) ? data : []))
+      .catch(console.error);
   }, []);
   return (
     <footer className="bg-slate-900 text-slate-300">
@@ -37,9 +39,9 @@ const Footer = () => {
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center mb-4">
               <img
-                src="/logo-light.png"
+                src="/logo-light.png?v=2"
                 alt="Vypaar Setu Logo"
-                className="h-10 w-auto"
+                className="h-12 w-auto"
               />
             </Link>
             <p className="text-sm text-slate-400 leading-relaxed mb-5">

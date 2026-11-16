@@ -99,9 +99,11 @@ const AdminLogin = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex flex-col items-center gap-2">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-teal-400 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/30">
-              <Building2 size={30} className="text-white" />
-            </div>
+            <img
+              src="/logo-icon-light.png?v=2"
+              alt="Vypaar Setu"
+              className="w-16 h-16 object-contain"
+            />
             <div>
               <div className="text-white font-bold text-lg">Vypaar Setu</div>
               <div className="text-blue-300 text-xs">Admin Panel</div>
