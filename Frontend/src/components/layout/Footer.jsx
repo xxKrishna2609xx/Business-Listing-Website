@@ -136,6 +136,31 @@ const Footer = () => {
         </div>
       </div>
 
+      {/* Our Team */}
+      <div className="border-t border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <h4 className="text-white font-semibold mb-5 text-sm uppercase tracking-wide text-center">
+            Meet Our Team
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { name: 'Krishna Goyal',    college: 'GLA University' },
+              { name: 'Ujjwal Kaushik',   college: 'GLA University' },
+              { name: 'Aryan Vashistha',  college: 'GLA University' },
+              { name: 'Abhishek Raj',     college: 'GLA University' },
+            ].map(({ name, college }) => (
+              <div
+                key={name}
+                className="bg-slate-800/60 border border-slate-800 rounded-xl px-4 py-3 text-center"
+              >
+                <div className="text-sm font-semibold text-white">{name}</div>
+                <div className="text-xs text-slate-400 mt-0.5">{college}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Bottom Bar */}
       <div className="border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
