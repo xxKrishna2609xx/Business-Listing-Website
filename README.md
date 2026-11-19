@@ -195,7 +195,7 @@ copy .env.example .env         # Windows   (cp .env.example .env on macOS/Linux)
 npm run dev
 ```
 
-Open **http://localhost:5173** 🎉
+Open **(https://business-listing-website-alpha.vercel.app/)** 🎉
 
 ### 🏭 Production Build
 
